@@ -105,6 +105,18 @@
           });
         }
       });
+      
+      // Handle logout
+      window.netlifyIdentity.on("logout", () => {
+        document.location.href = "/";
+      });
+      
+      // Open login modal if not logged in
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          window.netlifyIdentity.open();
+        }
+      });
     }
   </script>
 </body>
