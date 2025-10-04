@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample - How to Add Real Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .example {
+            background: #f8f9fa;
+            border-left: 4px solid #007acc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code {
+            background: #343a40;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before-after > div {
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .before {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .after {
+            background: #d1edff;
+            border: 1px solid #74b9ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔨 How to Add Your Carpentry Images</h1>
+    
+    <p>This guide shows you how to replace the placeholder content with your actual carpentry photos and videos.</p>
+
+    <h2>📸 Step 1: Prepare Your Images</h2>
+    
+    <div class="example">
+        <h3>Image Requirements:</h3>
+        <ul>
+            <li><strong>Format:</strong> JPG, PNG, or WebP</li>
+            <li><strong>Size:</strong> Minimum 1200px wide for best quality</li>
+            <li><strong>Aspect Ratio:</strong> 4:3 or 16:9 works best for galleries</li>
+            <li><strong>File Size:</strong> Under 2MB each for fast loading</li>
+        </ul>
+    </div>
+
+    <h2>🗂️ Step 2: Organize Your Files</h2>
+    
+    <div class="example">
+        <h3>Suggested folder structure:</h3>
+        <div class="code">
+assets/images/
+├── furniture/
+│   ├── custom-table-1.jpg
+│   ├── dining-set-2.jpg
+│   └── bookshelf-3.jpg
+├── renovations/
+│   ├── kitchen-before.jpg
+│   ├── kitchen-after.jpg
+│   └── bathroom-remodel.jpg
+├── custom-work/
+│   ├── built-in-storage.jpg
+│   ├── custom-shelving.jpg
+│   └── cabinet-doors.jpg
+└── profile/
+    └── your-photo.jpg
+        </div>
+    </div>
+
+    <h2>✏️ Step 3: Update the HTML</h2>
+
+    <div class="before-after">
+        <div class="before">
+            <h4>BEFORE (Current Placeholder):</h4>
+            <div class="code">
+&lt;div class="gallery-item" data-category="furniture"&gt;
+    &lt;div class="image-placeholder"&gt;
+        &lt;i class="fas fa-image"&gt;&lt;/i&gt;
+        &lt;p&gt;Custom Table&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class="gallery-overlay"&gt;
+        &lt;i class="fas fa-expand"&gt;&lt;/i&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+            </div>
+        </div>
+        
+        <div class="after">
+            <h4>AFTER (With Real Image):</h4>
+            <div class="code">
+&lt;div class="gallery-item" data-category="furniture"&gt;
+    &lt;img src="assets/images/furniture/custom-table-1.jpg" 
+         alt="Custom dining table made from local Bahamian wood"&gt;
+    &lt;div class="gallery-overlay"&gt;
+        &lt;i class="fas fa-expand"&gt;&lt;/i&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+            </div>
+        </div>
+    </div>
+
+    <h2>🎬 Step 4: Add Videos</h2>
+
+    <div class="before-after">
+        <div class="before">
+            <h4>BEFORE (Video Placeholder):</h4>
+            <div class="code">
+&lt;div class="video-item"&gt;
+    &lt;div class="video-placeholder"&gt;
+        &lt;i class="fas fa-play-circle"&gt;&lt;/i&gt;
+        &lt;p&gt;Furniture Making Process&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+            </div>
+        </div>
+        
+        <div class="after">
+            <h4>AFTER (With Real Video):</h4>
+            <div class="code">
+&lt;div class="video-item"&gt;
+    &lt;video controls poster="assets/images/video-thumbnail.jpg"&gt;
+        &lt;source src="assets/videos/table-making.mp4" type="video/mp4"&gt;
+        &lt;source src="assets/videos/table-making.webm" type="video/webm"&gt;
+        Your browser doesn't support video playback.
+    &lt;/video&gt;
+&lt;/div&gt;
+            </div>
+        </div>
+    </div>
+
+    <h2>👤 Step 5: Add Your Profile Photo</h2>
+
+    <div class="example">
+        <p>In the About section, replace:</p>
+        <div class="code">
+&lt;div class="image-placeholder"&gt;
+    &lt;i class="fas fa-user"&gt;&lt;/i&gt;
+    &lt;p&gt;Your Photo Here&lt;/p&gt;
+&lt;/div&gt;
+        </div>
+        
+        <p>With:</p>
+        <div class="code">
+&lt;img src="assets/images/profile/your-photo.jpg" 
+     alt="Professional carpenter in the Bahamas"
+     style="width: 300px; height: 300px; border-radius: 50%; object-fit: cover;"&gt;
+        </div>
+    </div>
+
+    <h2>🎨 Step 6: Image Optimization Tips</h2>
+
+    <div class="example">
+        <h3>For best results:</h3>
+        <ul>
+            <li><strong>Compress images:</strong> Use tools like TinyPNG or JPEG-Optimizer</li>
+            <li><strong>Consistent lighting:</strong> Edit photos to have similar brightness</li>
+            <li><strong>Professional angles:</strong> Show your work from the best perspectives</li>
+            <li><strong>Alt text:</strong> Always include descriptive alt attributes for SEO</li>
+            <li><strong>File naming:</strong> Use descriptive names like "mahogany-dining-table.jpg"</li>
+        </ul>
+    </div>
+
+    <h2>📱 Mobile Considerations</h2>
+
+    <div class="example">
+        <ul>
+            <li>Test images on mobile devices - they should load quickly</li>
+            <li>Consider creating smaller versions for mobile (responsive images)</li>
+            <li>Ensure text overlays are readable on small screens</li>
+            <li>Videos should have appropriate mobile controls</li>
+        </ul>
+    </div>
+
+    <h2>🔍 SEO Best Practices</h2>
+
+    <div class="example">
+        <h3>Alt Text Examples:</h3>
+        <ul>
+            <li><strong>Good:</strong> "Custom mahogany dining table for Nassau home"</li>
+            <li><strong>Better:</strong> "Handcrafted 8-person mahogany dining table with traditional joinery"</li>
+            <li><strong>Best:</strong> "Custom mahogany dining table crafted by Bahamas carpenter using traditional mortise and tenon joints"</li>
+        </ul>
+    </div>
+
+    <h2>🎯 Quick Checklist</h2>
+
+    <div class="example">
+        <h3>Before publishing:</h3>
+        <ul>
+            <li>✅ All images are under 2MB</li>
+            <li>✅ Alt text is descriptive and includes location keywords</li>
+            <li>✅ Images show your best work</li>
+            <li>✅ Videos have poster images (thumbnails)</li>
+            <li>✅ File names are SEO-friendly</li>
+            <li>✅ Test on mobile and desktop</li>
+            <li>✅ All placeholders are replaced</li>
+        </ul>
+    </div>
+
+    <hr>
+
+    <p><strong>Ready to customize your website?</strong> Start by gathering 10-15 of your best project photos and follow this guide step by step. Your professional carpentry website will showcase your skills and attract new clients throughout the Bahamas!</p>
+    
+    <p style="text-align: center; margin-top: 40px;">
+        <a href="index.html" style="background: #007acc; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px;">← Back to Main Website</a>
+    </p>
+</body>
+</html>

@@ -1,0 +1,114 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "assets/images/uploads"
+public_folder: "/assets/images/uploads"
+
+collections:
+  # Gallery Management
+  - name: "gallery"
+    label: "🖼️ Gallery Photos"
+    folder: "_data/gallery"
+    create: true
+    slug: "spot-{{spot}}"
+    fields:
+      - { label: "Gallery Spot", name: "spot", widget: "select", options: ["1", "2", "3", "4", "5", "6"] }
+      - { label: "Photo Title", name: "title", widget: "string", required: true }
+      - { label: "Photo", name: "image", widget: "image", required: true }
+      - { label: "Description", name: "description", widget: "string", required: false }
+      - { label: "Category", name: "category", widget: "select", options: ["furniture", "renovation", "custom", "all"], default: "all" }
+
+  # Profile Photo
+  - name: "profile"
+    label: "👤 Profile Photo"
+    files:
+      - file: "_data/profile.yml"
+        label: "Your Profile Photo"
+        name: "profile"
+        fields:
+          - { label: "Profile Photo", name: "image", widget: "image" }
+          - { label: "Name", name: "name", widget: "string", default: "Casa Madera Owner" }
+          - { label: "Title", name: "title", widget: "string", default: "Master Craftsman" }
+
+  # Contact Information
+  - name: "contact"
+    label: "📞 Contact Info"
+    files:
+      - file: "_data/contact.yml"
+        label: "Contact Information"
+        name: "contact"
+        fields:
+          - { label: "Phone Number", name: "phone", widget: "string", required: true }
+          - { label: "Email Address", name: "email", widget: "string", required: true }
+          - { label: "Location", name: "location", widget: "string", required: true }
+          - { label: "Service Area", name: "service_area", widget: "text", required: false }
+
+  # Social Media Links
+  - name: "social"
+    label: "📱 Social Media"
+    files:
+      - file: "_data/social.yml"
+        label: "Social Media Links"
+        name: "social"
+        fields:
+          - { label: "Facebook URL", name: "facebook", widget: "string", required: false }
+          - { label: "Instagram URL", name: "instagram", widget: "string", required: false }
+          - { label: "YouTube URL", name: "youtube", widget: "string", required: false }
+          - { label: "WhatsApp Number", name: "whatsapp", widget: "string", required: false }
+          - { label: "TikTok URL", name: "tiktok", widget: "string", required: false }
+          - { label: "LinkedIn URL", name: "linkedin", widget: "string", required: false }
+
+  # Business Information
+  - name: "business"
+    label: "💼 Business Info"
+    files:
+      - file: "_data/business.yml"
+        label: "Business Information"
+        name: "business"
+        fields:
+          - { label: "Business Name", name: "name", widget: "string", required: true }
+          - { label: "Description", name: "description", widget: "text", required: true }
+          - { label: "Service Area", name: "service_area", widget: "text", required: false }
+          - { label: "Years of Experience", name: "experience", widget: "string", required: false }
+          - { label: "Specialties", name: "specialties", widget: "list", required: false }
+
+  # Service Locations
+  - name: "locations"
+    label: "🗺️ Service Locations"
+    folder: "_data/locations"
+    create: true
+    slug: "{{name}}"
+    fields:
+      - { label: "Location Name", name: "name", widget: "string", required: true }
+      - { label: "Description", name: "description", widget: "string", required: false }
+      - { label: "Coordinates (lat,lng)", name: "coordinates", widget: "string", required: false, hint: "Optional: Enter as latitude,longitude (e.g. 25.0443,-77.3504)" }
+      - { label: "Active", name: "active", widget: "boolean", default: true }
+
+  # Reviews/Testimonials  
+  - name: "reviews"
+    label: "⭐ Customer Reviews"
+    folder: "_data/reviews"
+    create: true
+    slug: "review-{{year}}-{{month}}-{{day}}-{{hour}}{{minute}}"
+    fields:
+      - { label: "Customer Name", name: "name", widget: "string", required: true }
+      - { label: "Customer Location", name: "location", widget: "string", required: false }
+      - { label: "Rating (1-5)", name: "rating", widget: "select", options: ["1", "2", "3", "4", "5"], required: true }
+      - { label: "Review Text", name: "review", widget: "text", required: true }
+      - { label: "Project Type", name: "project", widget: "select", options: ["Custom Furniture", "Home Renovation", "Doors & Windows", "Stairs & Railings", "Repairs", "Other"], required: false }
+      - { label: "Display on Website", name: "published", widget: "boolean", default: true }
+      - { label: "Date", name: "date", widget: "datetime", default: "" }
+
+  # Email Settings
+  - name: "settings"
+    label: "⚙️ Website Settings"
+    files:
+      - file: "_data/settings.yml"
+        label: "Email & General Settings"
+        name: "settings"
+        fields:
+          - { label: "Receive Emails At", name: "email", widget: "string", required: true }
+          - { label: "Email Service", name: "email_service", widget: "select", options: ["emailjs", "formspree", "netlify"], default: "netlify" }
+          - { label: "Website Title", name: "title", widget: "string", default: "Casa Madera - Expert Carpentry Services" }
+          - { label: "SEO Description", name: "description", widget: "text", required: false }

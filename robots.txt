@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow admin pages from search engines
+Disallow: /admin-login.html
+Disallow: /admin-dashboard.html
+
+# Correct sitemap location
+Sitemap: https://casamadera1.netlify.app/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

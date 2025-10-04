@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casa Madera Admin</title>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #007acc, #40b5d8);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .loading-container {
+      text-align: center;
+      color: white;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    .loading-container h1 {
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .admin-info {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: left;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    
+    .admin-info h3 {
+      margin-top: 0;
+      color: #fff;
+      text-align: center;
+    }
+    
+    .admin-info ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .admin-info li {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container">
+    <h1>🔨 Casa Madera Admin</h1>
+    <div class="spinner"></div>
+    <p>Loading your admin panel...</p>
+    
+    <div class="admin-info">
+      <h3>✨ What You Can Manage:</h3>
+      <ul>
+        <li>📸 Gallery photos for each spot</li>
+        <li>📱 Social media links</li>
+        <li>📞 Contact information</li>
+        <li>👤 Your profile photo</li>
+        <li>🗺️ Service locations</li>
+        <li>💼 Business information</li>
+      </ul>
+      <p style="text-align: center; margin-top: 20px;">
+        <strong>Changes appear on your website in 2-3 minutes!</strong>
+      </p>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
+  <script>
+    // Initialize Netlify Identity
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
