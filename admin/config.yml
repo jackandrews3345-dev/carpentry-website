@@ -8,16 +8,32 @@ public_folder: "/assets/images/uploads"
 collections:
   # Gallery Management
   - name: "gallery"
-    label: "🖼️ Gallery Photos"
+    label: "🖼️ Gallery Photos & Videos"
     folder: "_data/gallery"
     create: true
-    slug: "spot-{{spot}}"
+    slug: "{{slug}}"
     fields:
-      - { label: "Gallery Spot", name: "spot", widget: "select", options: ["1", "2", "3", "4", "5", "6"] }
-      - { label: "Photo Title", name: "title", widget: "string", required: true }
-      - { label: "Photo", name: "image", widget: "image", required: true }
-      - { label: "Description", name: "description", widget: "string", required: false }
+      - { label: "Gallery Spot", name: "spot", widget: "select", options: [{"label": "Spot 1 (Top Left)", "value": "1"}, {"label": "Spot 2 (Top Center)", "value": "2"}, {"label": "Spot 3 (Top Right)", "value": "3"}, {"label": "Spot 4 (Bottom Left)", "value": "4"}, {"label": "Spot 5 (Bottom Center)", "value": "5"}, {"label": "Spot 6 (Bottom Right)", "value": "6"}] }
+      - { label: "Title", name: "title", widget: "string", required: true }
+      - { label: "Content Type", name: "type", widget: "select", options: ["image", "video"], default: "image" }
+      - { label: "Photo/Video", name: "image", widget: "image", required: true, hint: "For videos, upload a thumbnail image and add video URL below" }
+      - { label: "Video URL (Optional)", name: "video_url", widget: "string", required: false, hint: "YouTube, Vimeo, or direct video file URL" }
+      - { label: "Description", name: "description", widget: "text", required: false }
       - { label: "Category", name: "category", widget: "select", options: ["furniture", "renovation", "custom", "all"], default: "all" }
+
+  # Video Gallery
+  - name: "videos"
+    label: "🎥 Project Videos"
+    folder: "_data/videos"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Video Spot", name: "spot", widget: "select", options: [{"label": "Video 1 (Left)", "value": "1"}, {"label": "Video 2 (Center)", "value": "2"}, {"label": "Video 3 (Right)", "value": "3"}] }
+      - { label: "Video Title", name: "title", widget: "string", required: true }
+      - { label: "Thumbnail Image", name: "thumbnail", widget: "image", required: true }
+      - { label: "Video URL", name: "video_url", widget: "string", required: true, hint: "YouTube, Vimeo, or direct video file URL" }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Duration (Optional)", name: "duration", widget: "string", required: false, hint: "e.g., 2:30" }
 
   # Profile Photo
   - name: "profile"

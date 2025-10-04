@@ -135,6 +135,33 @@ class DataLoader {
         }
     }
 
+    // Load videos
+    async loadVideos() {
+        const videos = [];
+        for (let i = 1; i <= 3; i++) {
+            try {
+                // Try to load video files dynamically
+                const videoFiles = ['furniture-making-process.yml']; // Add more as discovered
+                for (const file of videoFiles) {
+                    const video = await this.loadYAML(`videos/${file}`);
+                    if (video && video.spot === i.toString()) {
+                        videos.push({
+                            spot: i,
+                            title: video.title || `Video ${i}`,
+                            thumbnail: video.thumbnail || '/assets/images/video-placeholder.jpg',
+                            video_url: video.video_url || '',
+                            description: video.description || '',
+                            duration: video.duration || ''
+                        });
+                    }
+                }
+            } catch (error) {
+                console.log(`No video for spot ${i}`);
+            }
+        }
+        return videos;
+    }
+
     // Fallback data if files can't be loaded (for development)
     getFallbackData(filePath) {
         const fallbacks = {
@@ -167,12 +194,13 @@ const dataLoader = new DataLoader();
 async function updatePageContent() {
     try {
         // Load all data
-        const [contact, social, business, profile, gallery] = await Promise.all([
+        const [contact, social, business, profile, gallery, videos] = await Promise.all([
             dataLoader.loadContact(),
             dataLoader.loadSocial(),
             dataLoader.loadBusiness(),
             dataLoader.loadProfile(),
-            dataLoader.loadGallery()
+            dataLoader.loadGallery(),
+            dataLoader.loadVideos()
         ]);
 
         // Update contact information
@@ -222,6 +250,9 @@ async function updatePageContent() {
 
         // Update gallery
         updateGalleryDisplay(gallery);
+        
+        // Update video gallery
+        updateVideoGallery(videos);
 
         console.log('Page content updated successfully');
     } catch (error) {
@@ -266,19 +297,87 @@ function updateGalleryDisplay(galleryItems) {
     galleryItems.forEach(item => {
         const gallerySpot = document.getElementById(`gallery-spot-${item.spot}`);
         if (gallerySpot) {
-            const img = gallerySpot.querySelector('img');
-            if (img) {
-                img.src = item.image;
-                img.alt = item.title;
+            // Check if there's a real image uploaded
+            if (item.image && item.image !== '/assets/images/placeholder.jpg' && item.image !== '/assets/images/uploads/kitchen-cabinet-sample.jpg') {
+                // Replace placeholder with actual image
+                const placeholder = gallerySpot.querySelector('.image-placeholder');
+                if (placeholder) {
+                    const img = document.createElement('img');
+                    img.src = item.image;
+                    img.alt = item.title;
+                    img.className = 'gallery-image';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    placeholder.replaceWith(img);
+                }
+            } else {
+                // Update placeholder text if no image uploaded
+                const titleElement = gallerySpot.querySelector('.image-placeholder p');
+                if (titleElement && item.title) {
+                    titleElement.textContent = item.title;
+                }
             }
             
-            // Update title if there's a title element
-            const titleElement = gallerySpot.querySelector('.gallery-title');
-            if (titleElement) {
-                titleElement.textContent = item.title;
+            // Update data category for filtering
+            if (item.category) {
+                gallerySpot.setAttribute('data-category', item.category);
             }
         }
     });
+}
+
+// Update video gallery
+function updateVideoGallery(videos) {
+    videos.forEach(video => {
+        const videoItems = document.querySelectorAll('.video-item');
+        if (videoItems[video.spot - 1]) {
+            const videoItem = videoItems[video.spot - 1];
+            const placeholder = videoItem.querySelector('.video-placeholder');
+            
+            if (placeholder) {
+                if (video.video_url && video.video_url.trim() !== '') {
+                    // Replace placeholder with video thumbnail and play button
+                    placeholder.innerHTML = `
+                        <div class="video-thumbnail" style="position: relative; width: 100%; height: 100%; background-image: url('${video.thumbnail}'); background-size: cover; background-position: center;">
+                            <div class="play-button" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                                <i class="fas fa-play-circle"></i>
+                            </div>
+                            <div class="video-info" style="position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                                <h4 style="margin: 0; font-size: 1.1rem;">${video.title}</h4>
+                                ${video.duration ? `<span style="font-size: 0.9rem;">${video.duration}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add click handler for video playback
+                    placeholder.style.cursor = 'pointer';
+                    placeholder.onclick = () => openVideoModal(video.video_url, video.title);
+                } else {
+                    // Update placeholder text
+                    const titleElement = placeholder.querySelector('p');
+                    if (titleElement) {
+                        titleElement.textContent = video.title;
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Open video modal (you'll need to implement this)
+function openVideoModal(videoUrl, title) {
+    // This would open a video modal - implement based on your needs
+    console.log('Opening video:', videoUrl, title);
+    // For now, just open in new window
+    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+        window.open(videoUrl, '_blank');
+    } else if (videoUrl.includes('vimeo.com')) {
+        window.open(videoUrl, '_blank');
+    } else {
+        // Direct video file
+        window.open(videoUrl, '_blank');
+    }
 }
 
 // Initialize when DOM is loaded
