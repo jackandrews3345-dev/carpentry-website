@@ -151,7 +151,9 @@ class DataLoader {
 
     // Load profile information
     async loadProfile() {
-        return await this.loadYAML('profile.yml');
+        const profile = await this.loadYAML('profile.yml');
+        console.log('Loaded profile data:', profile);
+        return profile;
     }
 
     // Load website settings
@@ -279,7 +281,7 @@ async function updatePageContent() {
 
         // Update business information
         if (business.name) {
-            const nameElements = document.querySelectorAll('.business-name');
+            const nameElements = document.querySelectorAll('.business-name, [data-business="name"]');
             nameElements.forEach(el => el.textContent = business.name);
         }
 
@@ -289,10 +291,7 @@ async function updatePageContent() {
         }
 
         // Update profile information
-        if (profile.image) {
-            const profileImages = document.querySelectorAll('.profile-image');
-            profileImages.forEach(img => img.src = profile.image);
-        }
+        updateProfilePhoto(profile);
 
         // Update gallery
         updateGalleryDisplay(gallery);
@@ -341,7 +340,44 @@ function updateSocialMediaIcons(social) {
     });
 }
 
-// Update gallery display
+// Update profile photo
+function updateProfilePhoto(profile) {
+    console.log('Updating profile photo:', profile);
+    
+    const profileContainer = document.querySelector('.profile-image-container');
+    if (!profileContainer) {
+        console.log('Profile container not found');
+        return;
+    }
+    
+    if (profile.image && profile.image !== '/assets/images/profile-placeholder.jpg') {
+        // Replace placeholder with actual profile image
+        console.log('Setting profile image to:', profile.image);
+        profileContainer.innerHTML = `
+            <img src="${profile.image}" alt="${profile.name || 'Profile Photo'}" 
+                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                 class="profile-image">
+        `;
+    } else {
+        // Update placeholder text with profile info
+        const nameText = profile.name || 'Your Photo Here';
+        profileContainer.innerHTML = `
+            <i class="fas fa-user"></i>
+            <p>${nameText}</p>
+            ${profile.title ? `<small style="opacity: 0.8;">${profile.title}</small>` : ''}
+        `;
+    }
+    
+    // Update profile name and title in the about section if provided
+    if (profile.name) {
+        const aboutName = document.querySelector('.about-text h3');
+        if (aboutName && profile.title) {
+            aboutName.textContent = `${profile.name} - ${profile.title}`;
+        }
+    }
+}
+
+// Update video gallery
 function updateGalleryDisplay(galleryItems) {
     galleryItems.forEach(item => {
         const gallerySpot = document.getElementById(`gallery-spot-${item.spot}`);
