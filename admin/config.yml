@@ -21,6 +21,48 @@ collections:
       - { label: "Description", name: "description", widget: "text", required: false }
       - { label: "Category", name: "category", widget: "select", options: ["furniture", "renovation", "custom", "all"], default: "all" }
 
+  # Furniture Gallery
+  - name: "furniture_gallery"
+    label: "🪑 Furniture Gallery"
+    folder: "_data/gallery/furniture"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Furniture Name", name: "title", widget: "string", required: true }
+      - { label: "Photo", name: "image", widget: "image", required: true }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Type", name: "furniture_type", widget: "select", options: ["Table", "Chair", "Cabinet", "Shelf", "Bed", "Wardrobe", "Desk", "Other"], required: false }
+      - { label: "Wood Type", name: "wood_type", widget: "string", required: false }
+      - { label: "Finish", name: "finish", widget: "string", required: false }
+
+  # Renovation Gallery
+  - name: "renovation_gallery"
+    label: "🏠 Renovation Gallery"
+    folder: "_data/gallery/renovation"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Project Name", name: "title", widget: "string", required: true }
+      - { label: "Before/After Photo", name: "image", widget: "image", required: true }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Project Type", name: "renovation_type", widget: "select", options: ["Kitchen", "Bathroom", "Living Room", "Bedroom", "Whole House", "Commercial", "Other"], required: false }
+      - { label: "Duration", name: "duration", widget: "string", required: false, hint: "e.g., 2 weeks" }
+      - { label: "Location", name: "location", widget: "string", required: false }
+
+  # Custom Work Gallery
+  - name: "custom_gallery"
+    label: "🔨 Custom Work Gallery"
+    folder: "_data/gallery/custom"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Custom Project Name", name: "title", widget: "string", required: true }
+      - { label: "Photo", name: "image", widget: "image", required: true }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Custom Type", name: "custom_type", widget: "select", options: ["Built-in Storage", "Staircase", "Railings", "Doors", "Windows", "Architectural Details", "Artistic Work", "Other"], required: false }
+      - { label: "Materials Used", name: "materials", widget: "string", required: false }
+      - { label: "Special Techniques", name: "techniques", widget: "text", required: false }
+
   # Video Gallery
   - name: "videos"
     label: "🎥 Project Videos"

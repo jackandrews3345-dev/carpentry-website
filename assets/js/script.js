@@ -41,12 +41,16 @@ function initializeMobileMenu() {
 
 // ===== GALLERY FILTERING FUNCTIONALITY =====
 function initializeGalleryFilter() {
+    console.log('Initializing gallery filter...');
     const filterButtons = document.querySelectorAll('.filter-btn');
     const galleryItems = document.querySelectorAll('.gallery-item');
+    
+    console.log('Found', filterButtons.length, 'filter buttons and', galleryItems.length, 'gallery items');
 
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
             const filterValue = this.getAttribute('data-filter');
+            console.log('Filter clicked:', filterValue);
             
             // Update active button
             filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -58,13 +62,22 @@ function initializeGalleryFilter() {
                 
                 if (filterValue === 'all' || itemCategory === filterValue) {
                     item.style.display = 'block';
-                    item.style.animation = 'fadeInUp 0.6s ease forwards';
+                    item.style.opacity = '1';
+                    item.style.transform = 'scale(1)';
+                    item.style.transition = 'all 0.3s ease';
                 } else {
                     item.style.display = 'none';
                 }
             });
         });
     });
+    
+    // Also re-initialize after content loads
+    setTimeout(() => {
+        const newFilterButtons = document.querySelectorAll('.filter-btn');
+        const newGalleryItems = document.querySelectorAll('.gallery-item');
+        console.log('Re-checking after delay:', newFilterButtons.length, 'buttons,', newGalleryItems.length, 'items');
+    }, 1000);
 }
 
 // ===== SIMPLE LIGHTBOX FUNCTIONALITY =====

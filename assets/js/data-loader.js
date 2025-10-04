@@ -70,6 +70,8 @@ class DataLoader {
     // Load all gallery items
     async loadGallery() {
         const galleryItems = [];
+        
+        // Load general gallery spots (1-6)
         for (let i = 1; i <= 6; i++) {
             try {
                 const item = await this.loadYAML(`gallery/spot-${i}.yml`);
@@ -86,7 +88,50 @@ class DataLoader {
                 console.log(`No gallery item for spot ${i}`);
             }
         }
+        
         return galleryItems;
+    }
+    
+    // Load category-specific galleries
+    async loadCategoryGalleries() {
+        const categories = ['furniture', 'renovation', 'custom'];
+        const categoryItems = {
+            furniture: [],
+            renovation: [],
+            custom: []
+        };
+        
+        for (const category of categories) {
+            try {
+                // Try to load sample files for each category
+                const sampleFiles = {
+                    furniture: ['custom-dining-table.yml'],
+                    renovation: ['kitchen-makeover-nassau.yml'],
+                    custom: ['built-in-entertainment-center.yml']
+                };
+                
+                for (const file of sampleFiles[category] || []) {
+                    try {
+                        const item = await this.loadYAML(`gallery/${category}/${file}`);
+                        if (item && item.title) {
+                            categoryItems[category].push({
+                                title: item.title,
+                                image: item.image || '/assets/images/placeholder.jpg',
+                                description: item.description || '',
+                                category: category,
+                                ...item
+                            });
+                        }
+                    } catch (error) {
+                        console.log(`No ${category} item: ${file}`);
+                    }
+                }
+            } catch (error) {
+                console.log(`Error loading ${category} gallery:`, error);
+            }
+        }
+        
+        return categoryItems;
     }
 
     // Load contact information
@@ -194,13 +239,14 @@ const dataLoader = new DataLoader();
 async function updatePageContent() {
     try {
         // Load all data
-        const [contact, social, business, profile, gallery, videos] = await Promise.all([
+        const [contact, social, business, profile, gallery, videos, categoryGalleries] = await Promise.all([
             dataLoader.loadContact(),
             dataLoader.loadSocial(),
             dataLoader.loadBusiness(),
             dataLoader.loadProfile(),
             dataLoader.loadGallery(),
-            dataLoader.loadVideos()
+            dataLoader.loadVideos(),
+            dataLoader.loadCategoryGalleries()
         ]);
 
         // Update contact information
@@ -253,6 +299,9 @@ async function updatePageContent() {
         
         // Update video gallery
         updateVideoGallery(videos);
+        
+        // Set up enhanced gallery filtering with category data
+        setupEnhancedGalleryFiltering(categoryGalleries);
 
         console.log('Page content updated successfully');
     } catch (error) {
@@ -327,6 +376,44 @@ function updateGalleryDisplay(galleryItems) {
     });
 }
 
+// Populate gallery with category-specific items
+function populateGalleryWithCategory(categoryItems, category) {
+    const galleryGrid = document.querySelector('.gallery-grid');
+    if (!galleryGrid) return;
+    
+    // Clear existing items
+    galleryGrid.innerHTML = '';
+    
+    if (categoryItems[category] && categoryItems[category].length > 0) {
+        // Add category-specific items
+        categoryItems[category].forEach((item, index) => {
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            galleryItem.setAttribute('data-category', category);
+            galleryItem.innerHTML = `
+                <div class="image-placeholder">
+                    <i class="fas fa-image"></i>
+                    <p>${item.title}</p>
+                    <small style="opacity: 0.8; font-size: 0.8rem;">${item.description || ''}</small>
+                </div>
+                <div class="gallery-overlay">
+                    <i class="fas fa-expand"></i>
+                </div>
+            `;
+            galleryGrid.appendChild(galleryItem);
+        });
+    } else {
+        // Show message if no items in category
+        galleryGrid.innerHTML = `
+            <div class="empty-category" style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                <i class="fas fa-camera" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
+                <h3>No ${category.charAt(0).toUpperCase() + category.slice(1)} Items Yet</h3>
+                <p>Upload ${category} photos in your admin panel to see them here!</p>
+            </div>
+        `;
+    }
+}
+
 // Update video gallery
 function updateVideoGallery(videos) {
     videos.forEach(video => {
@@ -378,6 +465,79 @@ function openVideoModal(videoUrl, title) {
         // Direct video file
         window.open(videoUrl, '_blank');
     }
+}
+
+// Enhanced gallery filtering with category data
+function setupEnhancedGalleryFiltering(categoryGalleries) {
+    console.log('Setting up enhanced gallery filtering with categories:', categoryGalleries);
+    
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const galleryGrid = document.querySelector('.gallery-grid');
+    const originalGalleryItems = Array.from(document.querySelectorAll('.gallery-item'));
+    
+    // Store original gallery HTML
+    const originalGalleryHTML = galleryGrid ? galleryGrid.innerHTML : '';
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filterValue = this.getAttribute('data-filter');
+            console.log('Enhanced filter clicked:', filterValue);
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (filterValue === 'all') {
+                // Show original gallery spots
+                galleryGrid.innerHTML = originalGalleryHTML;
+            } else {
+                // Show category-specific items
+                populateGalleryWithCategory(categoryGalleries, filterValue);
+            }
+            
+            // Re-initialize lightbox for new items
+            setTimeout(() => {
+                initializeLightboxForNewItems();
+            }, 100);
+        });
+    });
+}
+
+// Initialize lightbox for dynamically added gallery items
+function initializeLightboxForNewItems() {
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    
+    galleryItems.forEach((item, index) => {
+        // Remove existing event listeners
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
+        
+        newItem.style.cursor = 'pointer';
+        newItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const img = newItem.querySelector('img');
+            if (img && img.src && !img.src.includes('placeholder')) {
+                openLightbox(img.src, img.alt || `Gallery Image ${index + 1}`, 'image');
+            } else {
+                // Show placeholder
+                const title = newItem.querySelector('p')?.textContent || `Gallery Item ${index + 1}`;
+                const placeholderSrc = 'data:image/svg+xml;base64,' + btoa(`
+                    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="#007acc"/>
+                        <text x="50%" y="45%" font-family="Arial" font-size="32" fill="white" text-anchor="middle" dominant-baseline="middle">
+                            ${title}
+                        </text>
+                        <text x="50%" y="55%" font-family="Arial" font-size="18" fill="white" text-anchor="middle" dominant-baseline="middle">
+                            Upload photos in the admin panel!
+                        </text>
+                    </svg>
+                `);
+                openLightbox(placeholderSrc, title, 'image');
+            }
+        });
+    });
 }
 
 // Initialize when DOM is loaded
