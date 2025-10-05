@@ -10,7 +10,7 @@ public_folder: "/assets/images/uploads"
 
 # Enable identity widget
 identity:
-  url: https://casa-madera-carpentry.pages.dev # Replace with your actual Cloudflare Pages URL
+  url: https://casa-madera-carpentry.pages.dev
 
 collections:
   # Gallery Management

@@ -1,0 +1,5 @@
+name = "casa-madera-carpentry"
+compatibility_date = "2023-12-01"
+
+[env.production]
+route = "casa-madera-carpentry.pages.dev/*"
