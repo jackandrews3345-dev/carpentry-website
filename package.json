@@ -1,0 +1,11 @@
+{
+  "name": "casa-madera-carpentry",
+  "version": "1.0.0",
+  "description": "Casa Madera Carpentry Website",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'"
+  },
+  "devDependencies": {},
+  "author": "Casa Madera",
+  "license": "MIT"
+}
