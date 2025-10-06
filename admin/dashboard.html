@@ -347,6 +347,13 @@
                     <i class="fas fa-upload"></i> Import Settings
                 </button>
             </div>
+            
+            <!-- Firebase Status -->
+            <div id="firebase-status" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: #f8f9fa; border: 2px solid #e9ecef;">
+                <h4 style="margin-bottom: 0.5rem; color: #495057;"><i class="fas fa-cloud"></i> Database Status</h4>
+                <p id="firebase-status-message" style="margin: 0; color: #6c757d;">🔄 Checking Firebase connection...</p>
+                <p style="font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem;">Firebase makes your changes visible to everyone on all devices. <a href="../FIREBASE-SETUP-GUIDE.md" target="_blank">Setup guide</a></p>
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -644,13 +651,20 @@
         }
 
         // Update functions
-        function updateBusinessInfo() {
+        async function updateBusinessInfo() {
             const businessInfo = {
                 name: document.getElementById('businessName').value,
                 phone: document.getElementById('businessPhone').value,
                 email: document.getElementById('businessEmail').value
             };
-            localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
+            
+            // Save to both Firebase and localStorage
+            if (window.firebaseManager) {
+                await window.firebaseManager.saveData('businessInfo', businessInfo);
+            } else {
+                localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
+            }
+            
             showSuccess('businessSuccess');
             updatePreviews();
         }
@@ -674,14 +688,20 @@
             showSuccess('contactSuccess');
         }
 
-        function updateSocialMedia() {
+        async function updateSocialMedia() {
             const socialMedia = {
                 facebook: document.getElementById('facebookUrl').value,
                 instagram: document.getElementById('instagramUrl').value,
                 whatsapp: document.getElementById('whatsappNumber').value,
                 youtube: document.getElementById('youtubeUrl').value
             };
-            localStorage.setItem('socialMedia', JSON.stringify(socialMedia));
+            
+            // Save to both Firebase and localStorage
+            if (window.firebaseManager) {
+                await window.firebaseManager.saveData('socialMedia', socialMedia);
+            } else {
+                localStorage.setItem('socialMedia', JSON.stringify(socialMedia));
+            }
             
             // Also store individual keys for compatibility with main website
             localStorage.setItem('casa_social_facebook', socialMedia.facebook);
@@ -968,6 +988,30 @@
         // Initialize
         if (checkAuth()) {
             loadSettings();
+            
+            // Update Firebase status
+            setTimeout(updateFirebaseStatus, 2000);
+        }
+        
+        // Update Firebase status indicator
+        function updateFirebaseStatus() {
+            const statusElement = document.getElementById('firebase-status-message');
+            const containerElement = document.getElementById('firebase-status');
+            
+            if (window.firebaseManager) {
+                const status = window.firebaseManager.getStatus();
+                statusElement.textContent = status.message;
+                
+                if (status.isReady) {
+                    containerElement.style.borderColor = '#28a745';
+                    containerElement.style.background = '#d4edda';
+                } else {
+                    containerElement.style.borderColor = '#ffc107';
+                    containerElement.style.background = '#fff3cd';
+                }
+            } else {
+                statusElement.textContent = '⚠️ Firebase not initialized - using localStorage only';
+            }
         }
         
         // Initialize profile photo management after admin-functions.js loads
@@ -1011,6 +1055,14 @@
             }
         });
     </script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="../assets/js/firebase-config.js"></script>
     
     <!-- Admin Functions -->
     <script src="../assets/js/admin-functions.js"></script>
