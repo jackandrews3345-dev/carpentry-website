@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casa Madera - Admin Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .credentials-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .credentials-info h4 {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .credentials-info code {
+            background: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Casa Madera</h1>
+            <p>Admin Panel Login</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="login-btn">Login</button>
+            
+            <div id="errorMessage" class="error-message">
+                Invalid username or password. Please try again.
+            </div>
+            
+            <div id="successMessage" class="success-message">
+                Login successful! Redirecting...
+            </div>
+        </form>
+
+        <div class="credentials-info">
+            <h4>Default Login Credentials:</h4>
+            <p><strong>Username:</strong> <code>casamadera</code></p>
+            <p><strong>Password:</strong> <code>admin123</code></p>
+            <p><em>You can change these in the dashboard settings.</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Default login credentials (can be changed in dashboard)
+        function getAdminCredentials() {
+            const stored = localStorage.getItem('adminCredentials');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+            return {
+                username: 'casamadera',
+                password: 'admin123'
+            };
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
+            
+            // Hide previous messages
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            const credentials = getAdminCredentials();
+            
+            // Check credentials
+            if (username === credentials.username && password === credentials.password) {
+                // Set login session
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('loginTimestamp', Date.now().toString());
+                
+                // Show success message
+                successMsg.style.display = 'block';
+                
+                // Redirect to admin dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                // Show error message
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Check if already logged in
+        function checkLoginStatus() {
+            const isLoggedIn = localStorage.getItem('adminLoggedIn');
+            const loginTime = localStorage.getItem('loginTimestamp');
+            
+            if (isLoggedIn === 'true' && loginTime) {
+                // Check if login is still valid (24 hours)
+                const currentTime = Date.now();
+                const loginTimestamp = parseInt(loginTime);
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+                
+                if (currentTime - loginTimestamp < twentyFourHours) {
+                    // Still logged in, redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        }
+
+        // Check login status when page loads
+        checkLoginStatus();
+    </script>
+</body>
+</html>
