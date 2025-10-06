@@ -90,6 +90,7 @@ function setProfilePhoto(src) {
         
         // Save to localStorage
         localStorage.setItem('casa_profile_photo', src);
+        localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
         
         // Show success message
         const successElement = document.getElementById('profileSuccess');
@@ -118,6 +119,7 @@ function removeProfilePhoto() {
             
             // Remove from localStorage
             localStorage.removeItem('casa_profile_photo');
+            localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
             
             // Show success message
             const successElement = document.getElementById('profileSuccess');

@@ -354,6 +354,10 @@ function updateProfilePhoto(profile) {
     const adminProfilePhoto = localStorage.getItem('casa_profile_photo');
     let imageToUse = adminProfilePhoto || profile.image;
     
+    console.log('Admin profile photo from localStorage:', adminProfilePhoto);
+    console.log('Profile image from YAML:', profile.image);
+    console.log('Image to use:', imageToUse);
+    
     if (imageToUse && imageToUse !== '/assets/images/profile-placeholder.jpg') {
         // Replace placeholder with actual profile image
         console.log('Setting profile image to:', imageToUse);
@@ -580,9 +584,69 @@ function initializeLightboxForNewItems() {
     });
 }
 
+// Function to refresh profile photo from admin panel (make it global)
+window.refreshProfilePhoto = function refreshProfilePhoto() {
+    const adminProfilePhoto = localStorage.getItem('casa_profile_photo');
+    const profileContainer = document.querySelector('.profile-image-container');
+    
+    if (profileContainer && adminProfilePhoto) {
+        console.log('Refreshing profile photo from admin panel:', adminProfilePhoto);
+        profileContainer.innerHTML = `
+            <img src="${adminProfilePhoto}" alt="Profile Photo" 
+                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                 class="profile-image">
+        `;
+        return true;
+    }
+    return false;
+}
+
+// Test function to debug profile photo (make it global)
+window.testProfilePhoto = function() {
+    console.log('=== Profile Photo Debug ===');
+    console.log('localStorage casa_profile_photo:', localStorage.getItem('casa_profile_photo'));
+    console.log('Profile container exists:', !!document.querySelector('.profile-image-container'));
+    const container = document.querySelector('.profile-image-container');
+    if (container) {
+        console.log('Container HTML:', container.innerHTML);
+    }
+    
+    // Try to refresh
+    const result = refreshProfilePhoto();
+    console.log('Refresh result:', result);
+    
+    console.log('=== End Debug ===');
+};
+
+// Check for profile photo updates periodically
+function checkForProfileUpdates() {
+    // Check if profile was updated in the last few seconds
+    const lastUpdate = localStorage.getItem('casa_profile_photo_updated');
+    if (lastUpdate) {
+        const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
+        if (timeSinceUpdate < 5000) { // 5 seconds
+            refreshProfilePhoto();
+            localStorage.removeItem('casa_profile_photo_updated');
+        }
+    }
+    
+    // Set up periodic check
+    setTimeout(checkForProfileUpdates, 1000);
+}
+
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updatePageContent);
+    document.addEventListener('DOMContentLoaded', () => {
+        updatePageContent();
+        // Also try to refresh profile photo immediately
+        setTimeout(refreshProfilePhoto, 500);
+        // Start checking for updates
+        checkForProfileUpdates();
+    });
 } else {
     updatePageContent();
+    // Also try to refresh profile photo immediately
+    setTimeout(refreshProfilePhoto, 500);
+    // Start checking for updates
+    checkForProfileUpdates();
 }
