@@ -276,8 +276,10 @@ async function updatePageContent() {
             });
         }
 
-        // Update social media links
-        updateSocialMediaIcons(social);
+        // Update social media links with delay to prevent conflicts
+        setTimeout(() => {
+            updateSocialMediaIcons(social);
+        }, 500);
 
         // Update business information
         if (business.name) {
@@ -303,6 +305,12 @@ async function updatePageContent() {
         setupEnhancedGalleryFiltering(categoryGalleries);
 
         console.log('Page content updated successfully');
+        
+        // Final social media update to ensure they stay visible
+        setTimeout(() => {
+            updateSocialMediaIcons(social);
+        }, 1000);
+        
     } catch (error) {
         console.error('Error updating page content:', error);
     }
@@ -323,6 +331,8 @@ function updateSocialMediaIcons(social) {
         tiktok: localStorage.getItem('casa_social_tiktok') || social.tiktok || '',
         linkedin: localStorage.getItem('casa_social_linkedin') || social.linkedin || ''
     };
+    
+    console.log('Social media data found:', combinedSocial);
 
     const socialPlatforms = [
         { key: 'facebook', name: 'Facebook', icon: 'fab fa-facebook-f', color: '#1877f2' },
@@ -333,7 +343,14 @@ function updateSocialMediaIcons(social) {
         { key: 'linkedin', name: 'LinkedIn', icon: 'fab fa-linkedin-in', color: '#0077b5' }
     ];
 
-    socialContainer.innerHTML = '';
+    // Only clear if we have new social media data or if container is empty
+    const hasValidSocial = Object.values(combinedSocial).some(val => val && val.trim() !== '');
+    if (hasValidSocial || socialContainer.children.length === 0) {
+        socialContainer.innerHTML = '';
+    } else {
+        // Don't clear if we don't have data and icons are already there
+        return;
+    }
 
     socialPlatforms.forEach(platform => {
         const url = combinedSocial[platform.key];

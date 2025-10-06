@@ -1343,8 +1343,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAdminContent();
     loadAdminSettings(); // New admin integration
     
-    // Load social media links
-    loadSocialMediaLinks();
+    // Load social media links - disabled to prevent conflicts with data-loader.js
+    // loadSocialMediaLinks();
     
     // Add admin link if logged in
     addAdminLink();
