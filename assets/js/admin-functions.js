@@ -78,16 +78,16 @@ async function handleProfilePhotoUpload(event) {
         // Show loading state
         const profilePreview = document.getElementById('profile-preview');
         if (profilePreview) {
-            profilePreview.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-bottom: 10px;"></i><p style="color: #007acc; margin: 0; font-size: 0.9rem;">Uploading to Firebase...</p></div>`;
+            profilePreview.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-bottom: 10px;"></i><p style="color: #007acc; margin: 0; font-size: 0.9rem;">Saving to Firebase Database...</p></div>`;
             console.log('🔄 Loading spinner shown');
         }
         
         try {
             // Upload to Firebase if available, otherwise use base64
             if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
-                console.log('🔥 Using Firebase for upload');
+                console.log('🔥 Using Firebase Database for upload (no Storage needed)');
                 const imageUrl = await window.firebaseManager.uploadImage(file, `profile/profile-photo-${Date.now()}`);
-                console.log('✅ Firebase upload successful:', imageUrl);
+                console.log('✅ Firebase Database upload successful');
                 
                 // Update preview with Firebase URL
                 if (profilePreview) {

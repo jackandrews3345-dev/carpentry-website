@@ -45,7 +45,7 @@ class FirebaseManager {
             
             console.log('🔧 Setting up Firebase services...');
             this.database = firebase.database();
-            this.storage = firebase.storage();
+            // Note: We only use Firebase Database (free), not Storage (paid)
             this.isFirebaseReady = true;
             this.fallbackToLocalStorage = false;
             
@@ -116,36 +116,23 @@ class FirebaseManager {
         }
     }
 
-    // Upload image to Firebase Storage with localStorage fallback
+    // Upload image using base64 to Firebase Database (no Storage needed)
     async uploadImage(file, path) {
         try {
-            if (this.isFirebaseReady && !this.fallbackToLocalStorage && file.size < 10 * 1024 * 1024) { // 10MB limit
-                const storageRef = this.storage.ref().child(`images/${path}`);
-                const snapshot = await storageRef.put(file);
-                const downloadURL = await snapshot.ref.getDownloadURL();
-                
-                console.log('✅ Image uploaded to Firebase Storage');
-                return downloadURL;
-            }
-            
-            // Fallback to base64 localStorage
-            return new Promise((resolve, reject) => {
+            // Convert to base64 first
+            const base64Data = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
+            
+            console.log('✅ Image converted to base64 for Firebase Database');
+            return base64Data;
             
         } catch (error) {
-            console.warn('Firebase image upload failed, using base64 fallback:', error);
-            
-            // Fallback to base64
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
+            console.warn('Image conversion failed:', error);
+            throw error;
         }
     }
 
