@@ -849,12 +849,15 @@ if (!Element.prototype.closest) {
 // Send email to owner using selected service
 function sendEmailToOwner(formData) {
     return new Promise((resolve) => {
-        const ownerEmail = localStorage.getItem('casa_receive_email');
+        // Check multiple places for the owner email
+        const quoteSettings = JSON.parse(localStorage.getItem('quoteSettings') || '{}');
+        const businessInfo = JSON.parse(localStorage.getItem('businessInfo') || '{}');
+        const ownerEmail = quoteSettings.email || businessInfo.email || localStorage.getItem('casa_receive_email');
         const emailService = localStorage.getItem('casa_email_service') || 'emailjs';
         
         if (!ownerEmail) {
             // If no owner email is set, show instructions
-            showNotification('Please configure your email address in the admin panel first.', 'error');
+            showNotification('Please configure your email address in the admin panel under Quote Form Settings or Business Information.', 'error');
             resolve(false);
             return;
         }
@@ -907,28 +910,44 @@ function saveInquiry(formData) {
 // ===== ADMIN SYSTEM INTEGRATION =====
 // Load content from admin system
 function loadAdminContent() {
-    // Update contact information
-    const phone = localStorage.getItem('casa_contact_phone');
-    const email = localStorage.getItem('casa_contact_email');
-    const location = localStorage.getItem('casa_contact_location');
+    // Get admin panel settings
+    const businessInfo = JSON.parse(localStorage.getItem('businessInfo') || '{}');
+    const contactInfo = JSON.parse(localStorage.getItem('contactInfo') || '{}');
+    
+    // Update contact information from admin panel
+    const phone = businessInfo.phone || localStorage.getItem('casa_contact_phone');
+    const email = businessInfo.email || localStorage.getItem('casa_contact_email');
+    const location = contactInfo.address || localStorage.getItem('casa_contact_location');
     
     if (phone) {
-        const phoneElements = document.querySelectorAll('[data-contact="phone"]');
-        phoneElements.forEach(el => el.textContent = phone);
+        const phoneElements = document.querySelectorAll('.phone-number');
+        phoneElements.forEach(el => {
+            el.textContent = phone;
+            if (el.tagName === 'A') {
+                el.href = `tel:${phone}`;
+            }
+        });
     }
     
     if (email) {
-        const emailElements = document.querySelectorAll('[data-contact="email"]');
-        emailElements.forEach(el => el.textContent = email);
+        const emailElements = document.querySelectorAll('.email-address');
+        emailElements.forEach(el => {
+            el.textContent = email;
+            if (el.tagName === 'A') {
+                el.href = `mailto:${email}`;
+            }
+        });
     }
     
     if (location) {
-        const locationElements = document.querySelectorAll('[data-contact="location"]');
-        locationElements.forEach(el => el.textContent = location);
+        const locationElements = document.querySelectorAll('.business-location');
+        locationElements.forEach(el => {
+            el.innerHTML = location.replace(/\n/g, '<br>');
+        });
     }
     
     // Update business information
-    const businessName = localStorage.getItem('casa_business_name');
+    const businessName = businessInfo.name || localStorage.getItem('casa_business_name');
     if (businessName) {
         const nameElements = document.querySelectorAll('[data-business="name"]');
         nameElements.forEach(el => el.textContent = businessName);
@@ -936,6 +955,8 @@ function loadAdminContent() {
     
     // Load gallery images
     loadGalleryFromAdmin();
+    
+    console.log('Admin content loaded:', { businessInfo, contactInfo });
 }
 
 // Load gallery images from admin system

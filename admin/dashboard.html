@@ -598,12 +598,12 @@
             document.getElementById('businessAddress').value = contactInfo.address || '';
             document.getElementById('serviceAreas').value = contactInfo.serviceAreas || '';
             
-            // Social media
+            // Social media - check both formats
             const socialMedia = JSON.parse(localStorage.getItem('socialMedia') || '{}');
-            document.getElementById('facebookUrl').value = socialMedia.facebook || '';
-            document.getElementById('instagramUrl').value = socialMedia.instagram || '';
-            document.getElementById('whatsappNumber').value = socialMedia.whatsapp || '';
-            document.getElementById('youtubeUrl').value = socialMedia.youtube || '';
+            document.getElementById('facebookUrl').value = socialMedia.facebook || localStorage.getItem('casa_social_facebook') || '';
+            document.getElementById('instagramUrl').value = socialMedia.instagram || localStorage.getItem('casa_social_instagram') || '';
+            document.getElementById('whatsappNumber').value = socialMedia.whatsapp || localStorage.getItem('casa_social_whatsapp') || '';
+            document.getElementById('youtubeUrl').value = socialMedia.youtube || localStorage.getItem('casa_social_youtube') || '';
             
             // Website settings
             const websiteSettings = JSON.parse(localStorage.getItem('websiteSettings') || '{}');
@@ -682,6 +682,15 @@
                 youtube: document.getElementById('youtubeUrl').value
             };
             localStorage.setItem('socialMedia', JSON.stringify(socialMedia));
+            
+            // Also store individual keys for compatibility with main website
+            localStorage.setItem('casa_social_facebook', socialMedia.facebook);
+            localStorage.setItem('casa_social_instagram', socialMedia.instagram);
+            localStorage.setItem('casa_social_whatsapp', socialMedia.whatsapp);
+            localStorage.setItem('casa_social_youtube', socialMedia.youtube);
+            localStorage.setItem('casa_social_tiktok', ''); // Placeholder for TikTok
+            localStorage.setItem('casa_social_linkedin', ''); // Placeholder for LinkedIn
+            
             showSuccess('socialSuccess');
         }
 
@@ -960,6 +969,50 @@
         if (checkAuth()) {
             loadSettings();
         }
+        
+        // Initialize profile photo management after admin-functions.js loads
+        window.addEventListener('load', function() {
+            if (typeof initializeProfilePhoto === 'function') {
+                initializeProfilePhoto();
+            } else {
+                // Fallback - manually initialize profile photo functionality
+                const profileUpload = document.getElementById('profile-upload');
+                if (profileUpload) {
+                    profileUpload.addEventListener('change', function(e) {
+                        const file = e.target.files[0];
+                        if (file && file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const profilePreview = document.getElementById('profile-preview');
+                                if (profilePreview) {
+                                    profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                                    profilePreview.classList.add('has-image');
+                                    localStorage.setItem('casa_profile_photo', e.target.result);
+                                    localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                                    showSuccess('profileSuccess');
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            alert('Please select a valid image file under 5MB');
+                        }
+                    });
+                }
+                
+                // Load existing profile photo
+                const savedPhoto = localStorage.getItem('casa_profile_photo');
+                if (savedPhoto) {
+                    const profilePreview = document.getElementById('profile-preview');
+                    if (profilePreview) {
+                        profilePreview.innerHTML = `<img src="${savedPhoto}" alt="Profile Photo">`;
+                        profilePreview.classList.add('has-image');
+                    }
+                }
+            }
+        });
     </script>
+    
+    <!-- Admin Functions -->
+    <script src="../assets/js/admin-functions.js"></script>
 </body>
 </html>

@@ -308,10 +308,21 @@ async function updatePageContent() {
     }
 }
 
-// Update social media icons (same logic as before, but with loaded data)
+// Update social media icons - check both YAML and admin panel data
 function updateSocialMediaIcons(social) {
     const socialContainer = document.getElementById('social-media-container');
     if (!socialContainer) return;
+
+    // Check admin panel social media settings first
+    const adminSocial = JSON.parse(localStorage.getItem('socialMedia') || '{}');
+    const combinedSocial = {
+        facebook: adminSocial.facebook || localStorage.getItem('casa_social_facebook') || social.facebook || '',
+        instagram: adminSocial.instagram || localStorage.getItem('casa_social_instagram') || social.instagram || '',
+        youtube: adminSocial.youtube || localStorage.getItem('casa_social_youtube') || social.youtube || '',
+        whatsapp: adminSocial.whatsapp || localStorage.getItem('casa_social_whatsapp') || social.whatsapp || '',
+        tiktok: localStorage.getItem('casa_social_tiktok') || social.tiktok || '',
+        linkedin: localStorage.getItem('casa_social_linkedin') || social.linkedin || ''
+    };
 
     const socialPlatforms = [
         { key: 'facebook', name: 'Facebook', icon: 'fab fa-facebook-f', color: '#1877f2' },
@@ -325,10 +336,17 @@ function updateSocialMediaIcons(social) {
     socialContainer.innerHTML = '';
 
     socialPlatforms.forEach(platform => {
-        const url = social[platform.key];
+        const url = combinedSocial[platform.key];
         if (url && url.trim() !== '') {
             const link = document.createElement('a');
-            link.href = url;
+            
+            // Handle WhatsApp special formatting
+            if (platform.key === 'whatsapp' && !url.startsWith('http')) {
+                link.href = `https://wa.me/${url.replace(/[^0-9]/g, '')}`;
+            } else {
+                link.href = url;
+            }
+            
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             link.className = 'social-icon';
@@ -338,6 +356,8 @@ function updateSocialMediaIcons(social) {
             socialContainer.appendChild(link);
         }
     });
+    
+    console.log('Updated social media with:', combinedSocial);
 }
 
 // Update profile photo
