@@ -152,6 +152,67 @@
             gap: 1rem;
         }
 
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .gallery-spot {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: border-color 0.3s;
+        }
+
+        .gallery-spot:hover {
+            border-color: #667eea;
+        }
+
+        .gallery-spot.has-image {
+            border: 2px solid #28a745;
+            background: #f0f9f0;
+        }
+
+        .gallery-preview {
+            width: 100%;
+            max-width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-upload {
+            display: none;
+        }
+
+        .gallery-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0.25rem;
+        }
+
+        .gallery-btn:hover {
+            background: #0056b3;
+        }
+
+        .gallery-btn.remove {
+            background: #dc3545;
+        }
+
+        .gallery-btn.remove:hover {
+            background: #c82333;
+        }
+
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -281,6 +342,33 @@
                 <button class="btn" onclick="updateWebsiteSettings()">Update Website Settings</button>
                 <div class="success-message" id="websiteSuccess">Website settings updated!</div>
             </div>
+
+            <!-- Quote Form Settings -->
+            <div class="card">
+                <h3><i class="fas fa-envelope"></i> Quote Form Settings</h3>
+                <div class="current-values" id="quoteEmailPreview">
+                    Current quote email will appear here
+                </div>
+                <div class="form-group">
+                    <label>Quote Request Email:</label>
+                    <input type="email" id="quoteEmail" placeholder="quotes@yourbusiness.com">
+                    <small style="color: #666;">Email address where quote requests will be sent</small>
+                </div>
+                <button class="btn" onclick="updateQuoteSettings()">Update Quote Settings</button>
+                <div class="success-message" id="quoteSuccess">Quote settings updated!</div>
+            </div>
+        </div>
+
+        <!-- Gallery Management -->
+        <div class="card">
+            <h3><i class="fas fa-images"></i> Gallery Images</h3>
+            <p style="color: #666; margin-bottom: 1.5rem;">Upload and manage your gallery images. Images should be high quality and show your best work.</p>
+            
+            <div id="galleryGrid" class="gallery-grid">
+                <!-- Gallery spots will be generated here -->
+            </div>
+            
+            <div class="success-message" id="gallerySuccess">Gallery images updated!</div>
         </div>
 
         <!-- Setup Guide -->
@@ -359,12 +447,17 @@
             const websiteSettings = JSON.parse(localStorage.getItem('websiteSettings') || '{}');
             document.getElementById('websiteUrl').value = websiteSettings.url || window.location.origin;
             
+            // Quote settings
+            const quoteSettings = JSON.parse(localStorage.getItem('quoteSettings') || '{}');
+            document.getElementById('quoteEmail').value = quoteSettings.email || '';
+            
             // Admin credentials
             const credentials = JSON.parse(localStorage.getItem('adminCredentials') || '{}');
             document.getElementById('adminUsername').value = credentials.username || 'casamadera';
             document.getElementById('adminPassword').value = credentials.password || 'admin123';
             
             updatePreviews();
+            loadGallery();
         }
 
         // Update preview displays
@@ -380,6 +473,11 @@
             document.getElementById('credentialsPreview').innerHTML = `
                 <strong>Username:</strong> ${credentials.username || 'casamadera'}<br>
                 <strong>Password:</strong> ${'*'.repeat((credentials.password || 'admin123').length)}
+            `;
+            
+            const quoteSettings = JSON.parse(localStorage.getItem('quoteSettings') || '{}');
+            document.getElementById('quoteEmailPreview').innerHTML = `
+                <strong>Quote Email:</strong> ${quoteSettings.email || 'Not set'}
             `;
         }
 
@@ -433,6 +531,15 @@
             showSuccess('websiteSuccess');
         }
 
+        function updateQuoteSettings() {
+            const quoteSettings = {
+                email: document.getElementById('quoteEmail').value
+            };
+            localStorage.setItem('quoteSettings', JSON.stringify(quoteSettings));
+            showSuccess('quoteSuccess');
+            updatePreviews();
+        }
+
         // Show success message
         function showSuccess(elementId) {
             const element = document.getElementById(elementId);
@@ -449,7 +556,9 @@
                 contactInfo: JSON.parse(localStorage.getItem('contactInfo') || '{}'),
                 socialMedia: JSON.parse(localStorage.getItem('socialMedia') || '{}'),
                 websiteSettings: JSON.parse(localStorage.getItem('websiteSettings') || '{}'),
-                adminCredentials: JSON.parse(localStorage.getItem('adminCredentials') || '{}')
+                quoteSettings: JSON.parse(localStorage.getItem('quoteSettings') || '{}'),
+                adminCredentials: JSON.parse(localStorage.getItem('adminCredentials') || '{}'),
+                galleryImages: JSON.parse(localStorage.getItem('galleryImages') || '{}')
             };
             
             const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -478,7 +587,9 @@
                         if (settings.contactInfo) localStorage.setItem('contactInfo', JSON.stringify(settings.contactInfo));
                         if (settings.socialMedia) localStorage.setItem('socialMedia', JSON.stringify(settings.socialMedia));
                         if (settings.websiteSettings) localStorage.setItem('websiteSettings', JSON.stringify(settings.websiteSettings));
+                        if (settings.quoteSettings) localStorage.setItem('quoteSettings', JSON.stringify(settings.quoteSettings));
                         if (settings.adminCredentials) localStorage.setItem('adminCredentials', JSON.stringify(settings.adminCredentials));
+                        if (settings.galleryImages) localStorage.setItem('galleryImages', JSON.stringify(settings.galleryImages));
                         
                         loadSettings();
                         alert('Settings imported successfully!');
@@ -487,6 +598,76 @@
                     }
                 };
                 reader.readAsText(file);
+            }
+        }
+
+        // Gallery management functions
+        function loadGallery() {
+            const galleryContainer = document.getElementById('galleryGrid');
+            const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+            
+            // Create 9 gallery spots (3x3 grid)
+            galleryContainer.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const spot = document.createElement('div');
+                spot.className = 'gallery-spot';
+                spot.id = `gallery-spot-${i}`;
+                
+                if (galleryImages[`spot${i}`]) {
+                    spot.classList.add('has-image');
+                    spot.innerHTML = `
+                        <img src="${galleryImages[`spot${i}`]}" alt="Gallery ${i}" class="gallery-preview">
+                        <div>
+                            <button class="gallery-btn" onclick="changeImage(${i})">Change Image</button>
+                            <button class="gallery-btn remove" onclick="removeImage(${i})">Remove</button>
+                        </div>
+                        <input type="file" id="upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadImage(${i}, this)">
+                    `;
+                } else {
+                    spot.innerHTML = `
+                        <i class="fas fa-plus" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #666; margin-bottom: 1rem;">Gallery Spot ${i}</p>
+                        <button class="gallery-btn" onclick="addImage(${i})">Add Image</button>
+                        <input type="file" id="upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadImage(${i}, this)">
+                    `;
+                }
+                
+                galleryContainer.appendChild(spot);
+            }
+        }
+
+        function addImage(spotNumber) {
+            document.getElementById(`upload-${spotNumber}`).click();
+        }
+
+        function changeImage(spotNumber) {
+            document.getElementById(`upload-${spotNumber}`).click();
+        }
+
+        function uploadImage(spotNumber, input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+                    galleryImages[`spot${spotNumber}`] = e.target.result;
+                    localStorage.setItem('galleryImages', JSON.stringify(galleryImages));
+                    
+                    loadGallery();
+                    showSuccess('gallerySuccess');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage(spotNumber) {
+            if (confirm('Are you sure you want to remove this image?')) {
+                const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+                delete galleryImages[`spot${spotNumber}`];
+                localStorage.setItem('galleryImages', JSON.stringify(galleryImages));
+                
+                loadGallery();
+                showSuccess('gallerySuccess');
             }
         }
 

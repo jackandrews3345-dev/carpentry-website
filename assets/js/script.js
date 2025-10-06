@@ -1,3 +1,182 @@
+// ===== ADMIN INTEGRATION =====
+// Load gallery images and settings from admin panel
+function loadAdminSettings() {
+    console.log('Loading admin settings...');
+    
+    // Load gallery images
+    loadGalleryImages();
+    
+    // Load business info
+    loadBusinessInfo();
+    
+    // Set up quote form with admin email
+    setupQuoteForm();
+}
+
+function loadGalleryImages() {
+    const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+    
+    // Update gallery spots 1-6 (we have 6 spots in HTML)
+    for (let i = 1; i <= 6; i++) {
+        const spotElement = document.getElementById(`gallery-spot-${i}`);
+        if (spotElement && galleryImages[`spot${i}`]) {
+            const imageData = galleryImages[`spot${i}`];
+            
+            // Replace placeholder with actual image
+            spotElement.innerHTML = `
+                <img src="${imageData}" alt="Gallery Image ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <div class="gallery-overlay">
+                    <i class="fas fa-expand"></i>
+                </div>
+            `;
+        }
+    }
+    
+    // Also update spots 7-9 if they exist in admin (extend gallery to 9 spots)
+    for (let i = 7; i <= 9; i++) {
+        if (galleryImages[`spot${i}`]) {
+            const galleryGrid = document.querySelector('.gallery-grid');
+            if (galleryGrid) {
+                const newSpot = document.createElement('div');
+                newSpot.id = `gallery-spot-${i}`;
+                newSpot.className = 'gallery-item';
+                newSpot.setAttribute('data-category', 'custom');
+                
+                newSpot.innerHTML = `
+                    <img src="${galleryImages[`spot${i}`]}" alt="Gallery Image ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-expand"></i>
+                    </div>
+                `;
+                
+                galleryGrid.appendChild(newSpot);
+            }
+        }
+    }
+}
+
+function loadBusinessInfo() {
+    const businessInfo = JSON.parse(localStorage.getItem('businessInfo') || '{}');
+    const socialMedia = JSON.parse(localStorage.getItem('socialMedia') || '{}');
+    const contactInfo = JSON.parse(localStorage.getItem('contactInfo') || '{}');
+    
+    // Update business name
+    if (businessInfo.name) {
+        const businessNameElements = document.querySelectorAll('[data-business="name"]');
+        businessNameElements.forEach(el => {
+            if (el.tagName === 'H1') {
+                el.textContent = `Quality Carpentry in The Bahamas - ${businessInfo.name}`;
+            } else {
+                el.textContent = businessInfo.name;
+            }
+        });
+        
+        // Update footer business name
+        const footerTitle = document.querySelector('.footer-section h3');
+        if (footerTitle) footerTitle.textContent = businessInfo.name;
+    }
+    
+    // Update contact info
+    if (businessInfo.phone) {
+        const phoneElements = document.querySelectorAll('.phone-number');
+        phoneElements.forEach(el => {
+            el.textContent = businessInfo.phone;
+            if (el.tagName === 'A') {
+                el.href = `tel:${businessInfo.phone.replace(/[^0-9+]/g, '')}`;
+            }
+        });
+    }
+    
+    if (businessInfo.email) {
+        const emailElements = document.querySelectorAll('.email-address');
+        emailElements.forEach(el => {
+            el.textContent = businessInfo.email;
+            if (el.tagName === 'A') {
+                el.href = `mailto:${businessInfo.email}`;
+            }
+        });
+    }
+    
+    // Update location info
+    if (contactInfo.address) {
+        const locationElements = document.querySelectorAll('.business-location');
+        locationElements.forEach(el => {
+            el.innerHTML = contactInfo.address.replace(/\n/g, '<br>');
+        });
+    }
+    
+    // Update social media links
+    updateSocialMediaLinks(socialMedia);
+}
+
+function updateSocialMediaLinks(socialMedia) {
+    const socialContainer = document.getElementById('social-media-container');
+    if (!socialContainer) return;
+    
+    const socialPlatforms = [
+        { key: 'facebook', icon: 'fab fa-facebook-f', name: 'Facebook' },
+        { key: 'instagram', icon: 'fab fa-instagram', name: 'Instagram' },
+        { key: 'whatsapp', icon: 'fab fa-whatsapp', name: 'WhatsApp', urlPrefix: 'https://wa.me/' },
+        { key: 'youtube', icon: 'fab fa-youtube', name: 'YouTube' }
+    ];
+    
+    socialContainer.innerHTML = '';
+    
+    socialPlatforms.forEach(platform => {
+        if (socialMedia[platform.key]) {
+            const link = document.createElement('a');
+            let url = socialMedia[platform.key];
+            
+            if (platform.urlPrefix && !url.startsWith('http')) {
+                url = platform.urlPrefix + url.replace(/[^0-9]/g, '');
+            }
+            
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.innerHTML = `<i class="${platform.icon}"></i>`;
+            link.title = `Follow us on ${platform.name}`;
+            
+            socialContainer.appendChild(link);
+        }
+    });
+}
+
+function setupQuoteForm() {
+    const quoteSettings = JSON.parse(localStorage.getItem('quoteSettings') || '{}');
+    const contactForm = document.getElementById('contactForm');
+    
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(contactForm);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Add timestamp and quote email
+            data.timestamp = new Date().toISOString();
+            data.quoteEmail = quoteSettings.email || 'No email configured';
+            
+            console.log('Quote request submitted:', data);
+            
+            // Show success message
+            alert(`Thank you ${data.name}! Your quote request has been submitted. We'll contact you soon at ${data.email}.`);
+            
+            // Reset form
+            contactForm.reset();
+            
+            // In a real implementation, this would send an email to quoteSettings.email
+            // For now, we'll just log it
+            if (quoteSettings.email) {
+                console.log(`Quote request should be sent to: ${quoteSettings.email}`);
+            }
+        });
+    }
+}
+
 // ===== MAIN APP INITIALIZATION =====
 // This initialization is handled in the main block below
 
@@ -1103,6 +1282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load admin-managed content
     loadAdminContent();
+    loadAdminSettings(); // New admin integration
     
     // Load social media links
     loadSocialMediaLinks();
