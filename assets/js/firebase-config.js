@@ -23,26 +23,46 @@ class FirebaseManager {
 
     async initFirebase() {
         try {
+            console.log('🔥 Starting Firebase initialization...');
+            
             // Check if Firebase is available
             if (typeof firebase === 'undefined') {
-                console.log('Firebase SDK not loaded, using localStorage fallback');
+                console.log('❌ Firebase SDK not loaded, using localStorage fallback');
                 this.fallbackToLocalStorage = true;
                 return;
             }
+            
+            console.log('✅ Firebase SDK loaded successfully');
 
             // Initialize Firebase
             if (!firebase.apps.length) {
+                console.log('🔧 Initializing Firebase app...');
                 firebase.initializeApp(firebaseConfig);
+                console.log('✅ Firebase app initialized');
+            } else {
+                console.log('✅ Firebase app already initialized');
             }
             
+            console.log('🔧 Setting up Firebase services...');
             this.database = firebase.database();
             this.storage = firebase.storage();
             this.isFirebaseReady = true;
             this.fallbackToLocalStorage = false;
             
             console.log('✅ Firebase initialized successfully!');
+            console.log('🔧 Testing Firebase connection...');
+            
+            // Test Firebase connection
+            await this.database.ref('.info/connected').once('value', (snapshot) => {
+                if (snapshot.val() === true) {
+                    console.log('✅ Firebase database connected!');
+                } else {
+                    console.log('⚠️ Firebase database not connected');
+                }
+            });
             
             // Load data from Firebase
+            console.log('🔄 Loading data from Firebase...');
             await this.loadAllDataFromFirebase();
             
         } catch (error) {

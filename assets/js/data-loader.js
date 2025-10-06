@@ -671,11 +671,49 @@ window.testProfilePhoto = function() {
         console.log('Container HTML:', container.innerHTML);
     }
     
+    // Check Firebase status
+    if (window.firebaseManager) {
+        console.log('Firebase Manager exists:', true);
+        console.log('Firebase ready:', window.firebaseManager.isFirebaseReady);
+        console.log('Using localStorage fallback:', window.firebaseManager.fallbackToLocalStorage);
+        
+        // Try to load from Firebase
+        if (window.firebaseManager.isFirebaseReady) {
+            window.firebaseManager.loadData('casa_profile_photo').then(data => {
+                console.log('Firebase profile photo data:', data);
+            }).catch(err => {
+                console.log('Firebase load error:', err);
+            });
+        }
+    } else {
+        console.log('Firebase Manager exists:', false);
+    }
+    
     // Try to refresh
     const result = refreshProfilePhoto();
     console.log('Refresh result:', result);
     
+    // Try Firebase refresh
+    if (typeof loadProfileFromFirebase === 'function') {
+        loadProfileFromFirebase();
+    }
+    
     console.log('=== End Debug ===');
+};
+
+// Add global function to force Firebase sync
+window.forceFirebaseSync = async function() {
+    console.log('🔄 Forcing Firebase sync...');
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        await window.firebaseManager.loadAllDataFromFirebase();
+        console.log('✅ Firebase sync complete');
+        // Trigger page refresh
+        if (typeof updatePageContent === 'function') {
+            setTimeout(updatePageContent, 500);
+        }
+    } else {
+        console.log('❌ Firebase not ready for sync');
+    }
 };
 
 // Check for profile photo updates periodically
@@ -690,8 +728,38 @@ function checkForProfileUpdates() {
         }
     }
     
+    // Also try to load from Firebase if available
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        loadProfileFromFirebase();
+    }
+    
     // Set up periodic check
     setTimeout(checkForProfileUpdates, 1000);
+}
+
+// Load profile photo from Firebase
+async function loadProfileFromFirebase() {
+    try {
+        if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+            const profilePhotoUrl = await window.firebaseManager.loadData('casa_profile_photo');
+            if (profilePhotoUrl && typeof profilePhotoUrl === 'string') {
+                console.log('🖼️ Loading profile photo from Firebase:', profilePhotoUrl);
+                const profileContainer = document.querySelector('.profile-image-container');
+                if (profileContainer && profilePhotoUrl !== localStorage.getItem('casa_profile_photo')) {
+                    profileContainer.innerHTML = `
+                        <img src="${profilePhotoUrl}" alt="Profile Photo" 
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
+                             class="profile-image">
+                    `;
+                    // Update localStorage with Firebase data
+                    localStorage.setItem('casa_profile_photo', profilePhotoUrl);
+                    console.log('✅ Profile photo loaded from Firebase');
+                }
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ Could not load profile from Firebase:', error);
+    }
 }
 
 // Initialize when DOM is loaded
