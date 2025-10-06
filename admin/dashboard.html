@@ -1025,18 +1025,55 @@
                     profileUpload.addEventListener('change', function(e) {
                         const file = e.target.files[0];
                         if (file && file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const profilePreview = document.getElementById('profile-preview');
-                                if (profilePreview) {
-                                    profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
-                                    profilePreview.classList.add('has-image');
-                                    localStorage.setItem('casa_profile_photo', e.target.result);
-                                    localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
-                                    showSuccess('profileSuccess');
-                                }
-                            };
-                            reader.readAsDataURL(file);
+                            
+                            // Show loading state
+                            const profilePreview = document.getElementById('profile-preview');
+                            if (profilePreview) {
+                                profilePreview.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc;"></i></div>`;
+                            }
+                            
+                            // Upload to Firebase if available, otherwise use base64
+                            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                                window.firebaseManager.uploadImage(file, `profile/profile-photo-${Date.now()}`).then(imageUrl => {
+                                    if (profilePreview) {
+                                        profilePreview.innerHTML = `<img src="${imageUrl}" alt="Profile Photo">`;
+                                        profilePreview.classList.add('has-image');
+                                        localStorage.setItem('casa_profile_photo', imageUrl);
+                                        localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                                        
+                                        // Also save to Firebase database
+                                        window.firebaseManager.saveData('casa_profile_photo', imageUrl);
+                                        showSuccess('profileSuccess');
+                                    }
+                                }).catch(error => {
+                                    console.error('Firebase upload failed, using base64 fallback:', error);
+                                    // Fallback to base64
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        if (profilePreview) {
+                                            profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                                            profilePreview.classList.add('has-image');
+                                            localStorage.setItem('casa_profile_photo', e.target.result);
+                                            localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                                            showSuccess('profileSuccess');
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                });
+                            } else {
+                                // Fallback to base64 localStorage
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    if (profilePreview) {
+                                        profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                                        profilePreview.classList.add('has-image');
+                                        localStorage.setItem('casa_profile_photo', e.target.result);
+                                        localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                                        showSuccess('profileSuccess');
+                                    }
+                                };
+                                reader.readAsDataURL(file);
+                            }
                         } else {
                             alert('Please select a valid image file under 5MB');
                         }

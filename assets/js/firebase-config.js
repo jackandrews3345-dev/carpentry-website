@@ -1,15 +1,16 @@
 // Firebase configuration and database integration
 // This makes admin panel changes visible to everyone across all devices
 
-// Firebase configuration - Replace with your own config after setting up Firebase project
+// Firebase configuration - Real credentials from your Firebase project
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "casa-madera-carpentry.firebaseapp.com", 
+    apiKey: "AIzaSyAWaAHwlZjBWtLr_q0cpquF8ZrfHcXBdM0",
+    authDomain: "casa-madera-carpentry.firebaseapp.com",
     databaseURL: "https://casa-madera-carpentry-default-rtdb.firebaseio.com",
     projectId: "casa-madera-carpentry",
-    storageBucket: "casa-madera-carpentry.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+    storageBucket: "casa-madera-carpentry.firebasestorage.app",
+    messagingSenderId: "285478306449",
+    appId: "1:285478306449:web:5ed7fe71751c840429f530",
+    measurementId: "G-JKT1RY68JW"
 };
 
 // Firebase integration class
