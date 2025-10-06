@@ -349,13 +349,36 @@ function updateSocialMediaIcons(social) {
             
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.className = 'social-icon';
+            link.className = 'social-link';
             link.setAttribute('aria-label', `Follow us on ${platform.name}`);
-            link.style.color = platform.color;
             link.innerHTML = `<i class="${platform.icon}"></i>`;
             socialContainer.appendChild(link);
         }
     });
+    
+    // If no social links are configured, show some placeholder icons
+    if (socialContainer.children.length === 0) {
+        const defaultPlatforms = [
+            { name: 'Facebook', icon: 'fab fa-facebook-f', href: '#' },
+            { name: 'Instagram', icon: 'fab fa-instagram', href: '#' },
+            { name: 'WhatsApp', icon: 'fab fa-whatsapp', href: '#' },
+            { name: 'YouTube', icon: 'fab fa-youtube', href: '#' }
+        ];
+        
+        defaultPlatforms.forEach(platform => {
+            const link = document.createElement('a');
+            link.href = platform.href;
+            link.className = 'social-link';
+            link.setAttribute('aria-label', `${platform.name} (not configured)`);
+            link.onclick = function(e) {
+                e.preventDefault();
+                alert('This social media link has not been configured yet. Please set it up in the admin panel.');
+            };
+            link.innerHTML = `<i class="${platform.icon}"></i>`;
+            socialContainer.appendChild(link);
+        });
+        console.log('Added default social media placeholders');
+    }
     
     console.log('Updated social media with:', combinedSocial);
 }
