@@ -350,11 +350,15 @@ function updateProfilePhoto(profile) {
         return;
     }
     
-    if (profile.image && profile.image !== '/assets/images/profile-placeholder.jpg') {
+    // Check for admin panel uploaded photo first
+    const adminProfilePhoto = localStorage.getItem('casa_profile_photo');
+    let imageToUse = adminProfilePhoto || profile.image;
+    
+    if (imageToUse && imageToUse !== '/assets/images/profile-placeholder.jpg') {
         // Replace placeholder with actual profile image
-        console.log('Setting profile image to:', profile.image);
+        console.log('Setting profile image to:', imageToUse);
         profileContainer.innerHTML = `
-            <img src="${profile.image}" alt="${profile.name || 'Profile Photo'}" 
+            <img src="${imageToUse}" alt="${profile.name || 'Profile Photo'}" 
                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" 
                  class="profile-image">
         `;

@@ -282,6 +282,25 @@
             pointer-events: none;
         }
 
+        /* Profile Photo Styles */
+        #profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        #profile-preview.has-image {
+            border-color: #28a745;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            flex-direction: column;
+            display: flex;
+            align-items: center;
+        }
+
         @media (max-width: 768px) {
             .gallery-tabs {
                 flex-direction: column;
@@ -369,6 +388,34 @@
                 </div>
                 <button class="btn" onclick="updateCredentials()">Update Login Credentials</button>
                 <div class="success-message" id="credentialsSuccess">Login credentials updated!</div>
+            </div>
+
+            <!-- Profile Picture Management -->
+            <div class="card">
+                <h3><i class="fas fa-user-circle"></i> Profile Picture</h3>
+                <p style="color: #666; margin-bottom: 1rem;">Upload your profile photo that will appear in the "Casa Madera Owner" section on the main website.</p>
+                
+                <!-- Profile Photo Preview -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div id="profile-preview" style="width: 150px; height: 150px; border: 3px solid #e1e1e1; border-radius: 50%; margin: 0 auto 1rem; background: #f8f9fa; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <div class="placeholder-content">
+                            <i class="fas fa-user" style="font-size: 3rem; color: #ccc;"></i>
+                            <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Upload Your Photo</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn" onclick="document.getElementById('profile-upload').click()" style="margin-right: 0.5rem;">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                        <button class="btn btn-secondary" onclick="removeProfilePhoto()">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    <input type="file" id="profile-upload" style="display: none;" accept="image/*">
+                    <p style="color: #888; font-size: 0.8rem; margin-top: 0.5rem;">Recommended: Square image, 300x300px or larger</p>
+                </div>
+                
+                <div class="success-message" id="profileSuccess">Profile photo updated successfully!</div>
             </div>
 
             <!-- Contact Information -->

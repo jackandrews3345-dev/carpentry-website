@@ -86,9 +86,19 @@ function setProfilePhoto(src) {
     const profilePreview = document.getElementById('profile-preview');
     if (profilePreview) {
         profilePreview.innerHTML = `<img src="${src}" alt="Profile Photo">`;
+        profilePreview.classList.add('has-image');
         
         // Save to localStorage
         localStorage.setItem('casa_profile_photo', src);
+        
+        // Show success message
+        const successElement = document.getElementById('profileSuccess');
+        if (successElement) {
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
         
         updateMainWebsiteProfile();
     }
@@ -104,9 +114,21 @@ function removeProfilePhoto() {
                     <p>Upload Your Photo</p>
                 </div>
             `;
+            profilePreview.classList.remove('has-image');
             
             // Remove from localStorage
             localStorage.removeItem('casa_profile_photo');
+            
+            // Show success message
+            const successElement = document.getElementById('profileSuccess');
+            if (successElement) {
+                successElement.innerHTML = 'Profile photo removed successfully!';
+                successElement.style.display = 'block';
+                setTimeout(() => {
+                    successElement.style.display = 'none';
+                    successElement.innerHTML = 'Profile photo updated successfully!';
+                }, 3000);
+            }
             
             updateMainWebsiteProfile();
         }
