@@ -213,6 +213,86 @@
             background: #c82333;
         }
 
+        .gallery-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .gallery-tab {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .gallery-tab:hover {
+            color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .gallery-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .gallery-category-content {
+            display: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .gallery-category-content.active {
+            display: block;
+        }
+
+        .gallery-category-content h4 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .video-grid .gallery-spot {
+            position: relative;
+        }
+
+        .video-preview {
+            width: 100%;
+            max-width: 200px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .video-play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .gallery-tabs {
+                flex-direction: column;
+            }
+            
+            .gallery-tab {
+                text-align: center;
+                padding: 0.75rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -361,14 +441,49 @@
 
         <!-- Gallery Management -->
         <div class="card">
-            <h3><i class="fas fa-images"></i> Gallery Images</h3>
-            <p style="color: #666; margin-bottom: 1.5rem;">Upload and manage your gallery images. Images should be high quality and show your best work.</p>
+            <h3><i class="fas fa-images"></i> Gallery & Video Management</h3>
+            <p style="color: #666; margin-bottom: 1.5rem;">Upload and manage your gallery images and videos. Organize by category to showcase different types of work.</p>
             
-            <div id="galleryGrid" class="gallery-grid">
-                <!-- Gallery spots will be generated here -->
+            <!-- Gallery Category Tabs -->
+            <div class="gallery-tabs">
+                <button class="gallery-tab active" data-category="furniture">🪑 Custom Furniture</button>
+                <button class="gallery-tab" data-category="renovation">🏠 Renovations</button>
+                <button class="gallery-tab" data-category="custom">⚒️ Custom Work</button>
+                <button class="gallery-tab" data-category="videos">🎥 Project Videos</button>
             </div>
             
-            <div class="success-message" id="gallerySuccess">Gallery images updated!</div>
+            <!-- Gallery Content Areas -->
+            <div class="gallery-content">
+                <!-- Furniture Gallery -->
+                <div id="furniture-content" class="gallery-category-content active">
+                    <h4>Custom Furniture Images</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Upload images of tables, chairs, cabinets, and other custom furniture pieces</p>
+                    <div id="furnitureGallery" class="gallery-grid"></div>
+                </div>
+                
+                <!-- Renovation Gallery -->
+                <div id="renovation-content" class="gallery-category-content">
+                    <h4>Home Renovation Images</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Upload before/after photos of kitchen remodels, bathroom renovations, etc.</p>
+                    <div id="renovationGallery" class="gallery-grid"></div>
+                </div>
+                
+                <!-- Custom Work Gallery -->
+                <div id="custom-content" class="gallery-category-content">
+                    <h4>Custom Work Images</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Upload images of built-in storage, shelving, stairs, railings, and unique projects</p>
+                    <div id="customGallery" class="gallery-grid"></div>
+                </div>
+                
+                <!-- Videos Gallery -->
+                <div id="videos-content" class="gallery-category-content">
+                    <h4>Project Videos</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Upload process videos, time-lapses, or project showcases (MP4 format recommended)</p>
+                    <div id="videosGallery" class="gallery-grid video-grid"></div>
+                </div>
+            </div>
+            
+            <div class="success-message" id="gallerySuccess">Gallery updated successfully!</div>
         </div>
 
         <!-- Setup Guide -->
@@ -558,7 +673,10 @@
                 websiteSettings: JSON.parse(localStorage.getItem('websiteSettings') || '{}'),
                 quoteSettings: JSON.parse(localStorage.getItem('quoteSettings') || '{}'),
                 adminCredentials: JSON.parse(localStorage.getItem('adminCredentials') || '{}'),
-                galleryImages: JSON.parse(localStorage.getItem('galleryImages') || '{}')
+                gallery_furniture: JSON.parse(localStorage.getItem('gallery_furniture') || '{}'),
+                gallery_renovation: JSON.parse(localStorage.getItem('gallery_renovation') || '{}'),
+                gallery_custom: JSON.parse(localStorage.getItem('gallery_custom') || '{}'),
+                gallery_videos: JSON.parse(localStorage.getItem('gallery_videos') || '{}')
             };
             
             const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -589,7 +707,10 @@
                         if (settings.websiteSettings) localStorage.setItem('websiteSettings', JSON.stringify(settings.websiteSettings));
                         if (settings.quoteSettings) localStorage.setItem('quoteSettings', JSON.stringify(settings.quoteSettings));
                         if (settings.adminCredentials) localStorage.setItem('adminCredentials', JSON.stringify(settings.adminCredentials));
-                        if (settings.galleryImages) localStorage.setItem('galleryImages', JSON.stringify(settings.galleryImages));
+                        if (settings.gallery_furniture) localStorage.setItem('gallery_furniture', JSON.stringify(settings.gallery_furniture));
+                        if (settings.gallery_renovation) localStorage.setItem('gallery_renovation', JSON.stringify(settings.gallery_renovation));
+                        if (settings.gallery_custom) localStorage.setItem('gallery_custom', JSON.stringify(settings.gallery_custom));
+                        if (settings.gallery_videos) localStorage.setItem('gallery_videos', JSON.stringify(settings.gallery_videos));
                         
                         loadSettings();
                         alert('Settings imported successfully!');
@@ -601,74 +722,191 @@
             }
         }
 
-        // Gallery management functions
-        function loadGallery() {
-            const galleryContainer = document.getElementById('galleryGrid');
-            const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+        // Gallery tab management
+        function initializeGalleryTabs() {
+            const tabs = document.querySelectorAll('.gallery-tab');
+            const contents = document.querySelectorAll('.gallery-category-content');
             
-            // Create 9 gallery spots (3x3 grid)
-            galleryContainer.innerHTML = '';
-            for (let i = 1; i <= 9; i++) {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    contents.forEach(c => c.classList.remove('active'));
+                    document.getElementById(`${category}-content`).classList.add('active');
+                    
+                    // Load content for this category
+                    if (category === 'videos') {
+                        loadVideoGallery();
+                    } else {
+                        loadCategoryGallery(category);
+                    }
+                });
+            });
+        }
+
+        // Load gallery for a specific category
+        function loadCategoryGallery(category) {
+            const container = document.getElementById(`${category}Gallery`);
+            const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
+            
+            container.innerHTML = '';
+            
+            // Create 6 spots per category
+            for (let i = 1; i <= 6; i++) {
                 const spot = document.createElement('div');
                 spot.className = 'gallery-spot';
-                spot.id = `gallery-spot-${i}`;
+                spot.id = `${category}-spot-${i}`;
                 
-                if (galleryImages[`spot${i}`]) {
+                if (categoryData[`spot${i}`]) {
                     spot.classList.add('has-image');
                     spot.innerHTML = `
-                        <img src="${galleryImages[`spot${i}`]}" alt="Gallery ${i}" class="gallery-preview">
+                        <img src="${categoryData[`spot${i}`]}" alt="${category} ${i}" class="gallery-preview">
                         <div>
-                            <button class="gallery-btn" onclick="changeImage(${i})">Change Image</button>
-                            <button class="gallery-btn remove" onclick="removeImage(${i})">Remove</button>
+                            <button class="gallery-btn" onclick="changeCategoryImage('${category}', ${i})">Change</button>
+                            <button class="gallery-btn remove" onclick="removeCategoryImage('${category}', ${i})">Remove</button>
                         </div>
-                        <input type="file" id="upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadImage(${i}, this)">
+                        <input type="file" id="${category}-upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadCategoryImage('${category}', ${i}, this)">
                     `;
                 } else {
                     spot.innerHTML = `
                         <i class="fas fa-plus" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
-                        <p style="color: #666; margin-bottom: 1rem;">Gallery Spot ${i}</p>
-                        <button class="gallery-btn" onclick="addImage(${i})">Add Image</button>
-                        <input type="file" id="upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadImage(${i}, this)">
+                        <p style="color: #666; margin-bottom: 1rem;">${category.charAt(0).toUpperCase() + category.slice(1)} ${i}</p>
+                        <button class="gallery-btn" onclick="addCategoryImage('${category}', ${i})">Add Image</button>
+                        <input type="file" id="${category}-upload-${i}" class="gallery-upload" accept="image/*" onchange="uploadCategoryImage('${category}', ${i}, this)">
                     `;
                 }
                 
-                galleryContainer.appendChild(spot);
+                container.appendChild(spot);
             }
         }
 
-        function addImage(spotNumber) {
-            document.getElementById(`upload-${spotNumber}`).click();
+        // Load video gallery
+        function loadVideoGallery() {
+            const container = document.getElementById('videosGallery');
+            const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            
+            container.innerHTML = '';
+            
+            // Create 4 video spots
+            for (let i = 1; i <= 4; i++) {
+                const spot = document.createElement('div');
+                spot.className = 'gallery-spot';
+                spot.id = `video-spot-${i}`;
+                
+                if (videoData[`spot${i}`]) {
+                    spot.classList.add('has-image');
+                    spot.innerHTML = `
+                        <video class="video-preview" muted>
+                            <source src="${videoData[`spot${i}`]}" type="video/mp4">
+                        </video>
+                        <div class="video-play-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div>
+                            <button class="gallery-btn" onclick="changeVideo(${i})">Change Video</button>
+                            <button class="gallery-btn remove" onclick="removeVideo(${i})">Remove</button>
+                        </div>
+                        <input type="file" id="video-upload-${i}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${i}, this)">
+                    `;
+                } else {
+                    spot.innerHTML = `
+                        <i class="fas fa-video" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #666; margin-bottom: 1rem;">Project Video ${i}</p>
+                        <button class="gallery-btn" onclick="addVideo(${i})">Add Video</button>
+                        <input type="file" id="video-upload-${i}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${i}, this)">
+                    `;
+                }
+                
+                container.appendChild(spot);
+            }
         }
 
-        function changeImage(spotNumber) {
-            document.getElementById(`upload-${spotNumber}`).click();
+        // Category image management functions
+        function addCategoryImage(category, spotNumber) {
+            document.getElementById(`${category}-upload-${spotNumber}`).click();
         }
 
-        function uploadImage(spotNumber, input) {
+        function changeCategoryImage(category, spotNumber) {
+            document.getElementById(`${category}-upload-${spotNumber}`).click();
+        }
+
+        function uploadCategoryImage(category, spotNumber, input) {
             const file = input.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
-                    galleryImages[`spot${spotNumber}`] = e.target.result;
-                    localStorage.setItem('galleryImages', JSON.stringify(galleryImages));
+                    const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
+                    categoryData[`spot${spotNumber}`] = e.target.result;
+                    localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
                     
-                    loadGallery();
+                    loadCategoryGallery(category);
                     showSuccess('gallerySuccess');
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function removeImage(spotNumber) {
+        function removeCategoryImage(category, spotNumber) {
             if (confirm('Are you sure you want to remove this image?')) {
-                const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
-                delete galleryImages[`spot${spotNumber}`];
-                localStorage.setItem('galleryImages', JSON.stringify(galleryImages));
+                const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
+                delete categoryData[`spot${spotNumber}`];
+                localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
                 
-                loadGallery();
+                loadCategoryGallery(category);
                 showSuccess('gallerySuccess');
             }
+        }
+
+        // Video management functions
+        function addVideo(spotNumber) {
+            document.getElementById(`video-upload-${spotNumber}`).click();
+        }
+
+        function changeVideo(spotNumber) {
+            document.getElementById(`video-upload-${spotNumber}`).click();
+        }
+
+        function uploadVideo(spotNumber, input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                    alert('Video file is too large. Please choose a file under 50MB.');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+                    videoData[`spot${spotNumber}`] = e.target.result;
+                    localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+                    
+                    loadVideoGallery();
+                    showSuccess('gallerySuccess');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeVideo(spotNumber) {
+            if (confirm('Are you sure you want to remove this video?')) {
+                const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+                delete videoData[`spot${spotNumber}`];
+                localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+                
+                loadVideoGallery();
+                showSuccess('gallerySuccess');
+            }
+        }
+
+        // Initialize gallery management
+        function loadGallery() {
+            initializeGalleryTabs();
+            loadCategoryGallery('furniture'); // Load default tab
         }
 
         // Initialize

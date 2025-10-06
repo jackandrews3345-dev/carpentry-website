@@ -14,17 +14,18 @@ function loadAdminSettings() {
 }
 
 function loadGalleryImages() {
-    const galleryImages = JSON.parse(localStorage.getItem('galleryImages') || '{}');
+    // Load categorized gallery data
+    const furnitureData = JSON.parse(localStorage.getItem('gallery_furniture') || '{}');
+    const renovationData = JSON.parse(localStorage.getItem('gallery_renovation') || '{}');
+    const customData = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
+    const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
     
-    // Update gallery spots 1-6 (we have 6 spots in HTML)
-    for (let i = 1; i <= 6; i++) {
+    // Update furniture images (spots 1-2)
+    for (let i = 1; i <= 2; i++) {
         const spotElement = document.getElementById(`gallery-spot-${i}`);
-        if (spotElement && galleryImages[`spot${i}`]) {
-            const imageData = galleryImages[`spot${i}`];
-            
-            // Replace placeholder with actual image
+        if (spotElement && furnitureData[`spot${i}`]) {
             spotElement.innerHTML = `
-                <img src="${imageData}" alt="Gallery Image ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <img src="${furnitureData[`spot${i}`]}" alt="Custom Furniture ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
                 <div class="gallery-overlay">
                     <i class="fas fa-expand"></i>
                 </div>
@@ -32,27 +33,64 @@ function loadGalleryImages() {
         }
     }
     
-    // Also update spots 7-9 if they exist in admin (extend gallery to 9 spots)
-    for (let i = 7; i <= 9; i++) {
-        if (galleryImages[`spot${i}`]) {
-            const galleryGrid = document.querySelector('.gallery-grid');
-            if (galleryGrid) {
-                const newSpot = document.createElement('div');
-                newSpot.id = `gallery-spot-${i}`;
-                newSpot.className = 'gallery-item';
-                newSpot.setAttribute('data-category', 'custom');
-                
-                newSpot.innerHTML = `
-                    <img src="${galleryImages[`spot${i}`]}" alt="Gallery Image ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
-                    <div class="gallery-overlay">
-                        <i class="fas fa-expand"></i>
-                    </div>
-                `;
-                
-                galleryGrid.appendChild(newSpot);
-            }
+    // Update renovation images (spots 2, 5)
+    const renovationSpots = [2, 5];
+    renovationSpots.forEach((spot, index) => {
+        const spotElement = document.getElementById(`gallery-spot-${spot}`);
+        if (spotElement && renovationData[`spot${index + 1}`]) {
+            spotElement.innerHTML = `
+                <img src="${renovationData[`spot${index + 1}`]}" alt="Renovation ${index + 1}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <div class="gallery-overlay">
+                    <i class="fas fa-expand"></i>
+                </div>
+            `;
         }
-    }
+    });
+    
+    // Update custom work images (spots 3, 6)
+    const customSpots = [3, 6];
+    customSpots.forEach((spot, index) => {
+        const spotElement = document.getElementById(`gallery-spot-${spot}`);
+        if (spotElement && customData[`spot${index + 1}`]) {
+            spotElement.innerHTML = `
+                <img src="${customData[`spot${index + 1}`]}" alt="Custom Work ${index + 1}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <div class="gallery-overlay">
+                    <i class="fas fa-expand"></i>
+                </div>
+            `;
+        }
+    });
+    
+    // Update video section
+    loadGalleryVideos(videoData);
+}
+
+function loadGalleryVideos(videoData) {
+    const videoItems = document.querySelectorAll('.video-item');
+    
+    videoItems.forEach((item, index) => {
+        if (videoData[`spot${index + 1}`]) {
+            item.innerHTML = `
+                <video style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted>
+                    <source src="${videoData[`spot${index + 1}`]}" type="video/mp4">
+                </video>
+                <div class="gallery-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s;">
+                    <i class="fas fa-play" style="color: white; font-size: 2rem;"></i>
+                </div>
+            `;
+            
+            // Add hover effect
+            item.addEventListener('mouseenter', function() {
+                const overlay = this.querySelector('.gallery-overlay');
+                if (overlay) overlay.style.opacity = '1';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                const overlay = this.querySelector('.gallery-overlay');
+                if (overlay) overlay.style.opacity = '0';
+            });
+        }
+    });
 }
 
 function loadBusinessInfo() {
