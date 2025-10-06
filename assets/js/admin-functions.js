@@ -69,41 +69,87 @@ function initializeProfilePhoto() {
     loadProfilePhoto();
 }
 
-function handleProfilePhotoUpload(event) {
+async function handleProfilePhotoUpload(event) {
     const file = event.target.files[0];
     if (file && file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            setProfilePhoto(e.target.result);
-        };
-        reader.readAsDataURL(file);
+        
+        console.log('📸 Profile photo upload started');
+        
+        // Show loading state
+        const profilePreview = document.getElementById('profile-preview');
+        if (profilePreview) {
+            profilePreview.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-bottom: 10px;"></i><p style="color: #007acc; margin: 0; font-size: 0.9rem;">Uploading to Firebase...</p></div>`;
+            console.log('🔄 Loading spinner shown');
+        }
+        
+        try {
+            // Upload to Firebase if available, otherwise use base64
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                console.log('🔥 Using Firebase for upload');
+                const imageUrl = await window.firebaseManager.uploadImage(file, `profile/profile-photo-${Date.now()}`);
+                console.log('✅ Firebase upload successful:', imageUrl);
+                
+                // Update preview with Firebase URL
+                if (profilePreview) {
+                    profilePreview.innerHTML = `<img src="${imageUrl}" alt="Profile Photo">`;
+                    profilePreview.classList.add('has-image');
+                }
+                
+                // Save to both localStorage and Firebase database
+                localStorage.setItem('casa_profile_photo', imageUrl);
+                localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                await window.firebaseManager.saveData('casa_profile_photo', imageUrl);
+                
+                console.log('✅ Profile photo saved to Firebase and localStorage');
+                
+            } else {
+                console.log('⚠️ Firebase not ready, using base64 fallback');
+                // Fallback to base64 localStorage
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (profilePreview) {
+                        profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                        profilePreview.classList.add('has-image');
+                        localStorage.setItem('casa_profile_photo', e.target.result);
+                        localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                        console.log('✅ Profile photo saved to localStorage (base64)');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Show success message
+            const successElement = document.getElementById('profileSuccess');
+            if (successElement) {
+                successElement.style.display = 'block';
+                setTimeout(() => {
+                    successElement.style.display = 'none';
+                }, 3000);
+            }
+            
+        } catch (error) {
+            console.error('❌ Upload failed:', error);
+            
+            // Fallback to base64 on error
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (profilePreview) {
+                    profilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                    profilePreview.classList.add('has-image');
+                    localStorage.setItem('casa_profile_photo', e.target.result);
+                    localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
+                    console.log('✅ Profile photo saved to localStorage (fallback)');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        
     } else {
         alert('Please select a valid image file under 5MB');
     }
 }
 
-function setProfilePhoto(src) {
-    const profilePreview = document.getElementById('profile-preview');
-    if (profilePreview) {
-        profilePreview.innerHTML = `<img src="${src}" alt="Profile Photo">`;
-        profilePreview.classList.add('has-image');
-        
-        // Save to localStorage
-        localStorage.setItem('casa_profile_photo', src);
-        localStorage.setItem('casa_profile_photo_updated', Date.now().toString());
-        
-        // Show success message
-        const successElement = document.getElementById('profileSuccess');
-        if (successElement) {
-            successElement.style.display = 'block';
-            setTimeout(() => {
-                successElement.style.display = 'none';
-            }, 3000);
-        }
-        
-        updateMainWebsiteProfile();
-    }
-}
+// setProfilePhoto function removed - now handled directly in handleProfilePhotoUpload
 
 function removeProfilePhoto() {
     if (confirm('Are you sure you want to remove your profile photo?')) {
@@ -137,10 +183,40 @@ function removeProfilePhoto() {
     }
 }
 
-function loadProfilePhoto() {
+async function loadProfilePhoto() {
+    console.log('🔄 Loading profile photo...');
+    
+    // Try to load from Firebase first
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        try {
+            const firebasePhoto = await window.firebaseManager.loadData('casa_profile_photo');
+            if (firebasePhoto && typeof firebasePhoto === 'string') {
+                console.log('✅ Profile photo loaded from Firebase');
+                const profilePreview = document.getElementById('profile-preview');
+                if (profilePreview) {
+                    profilePreview.innerHTML = `<img src="${firebasePhoto}" alt="Profile Photo">`;
+                    profilePreview.classList.add('has-image');
+                }
+                // Update localStorage
+                localStorage.setItem('casa_profile_photo', firebasePhoto);
+                return;
+            }
+        } catch (error) {
+            console.log('⚠️ Could not load from Firebase, trying localStorage:', error);
+        }
+    }
+    
+    // Fallback to localStorage
     const savedPhoto = localStorage.getItem('casa_profile_photo');
     if (savedPhoto) {
-        setProfilePhoto(savedPhoto);
+        console.log('✅ Profile photo loaded from localStorage');
+        const profilePreview = document.getElementById('profile-preview');
+        if (profilePreview) {
+            profilePreview.innerHTML = `<img src="${savedPhoto}" alt="Profile Photo">`;
+            profilePreview.classList.add('has-image');
+        }
+    } else {
+        console.log('⚠️ No profile photo found');
     }
 }
 
