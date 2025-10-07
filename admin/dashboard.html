@@ -947,7 +947,7 @@
             document.getElementById(`video-upload-${spotNumber}`).click();
         }
 
-        function uploadVideo(spotNumber, input) {
+        async function uploadVideo(spotNumber, input) {
             const file = input.files[0];
             if (file) {
                 if (file.size > 50 * 1024 * 1024) { // 50MB limit
@@ -955,11 +955,33 @@
                     return;
                 }
                 
+                // Show loading state
+                const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
+                if (videoSpot) {
+                    videoSpot.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 120px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-right: 10px;"></i>
+                            <span>Uploading video...</span>
+                        </div>
+                    `;
+                }
+                
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = async function(e) {
                     const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
                     videoData[`spot${spotNumber}`] = e.target.result;
                     localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+                    
+                    // Save to Firebase if available
+                    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                        try {
+                            console.log(`📹 Uploading video ${spotNumber} to Firebase...`);
+                            await window.firebaseManager.saveData('gallery_videos', videoData);
+                            console.log(`✅ Video ${spotNumber} uploaded to Firebase`);
+                        } catch (error) {
+                            console.error('Firebase video upload failed:', error);
+                        }
+                    }
                     
                     loadVideoGallery();
                     showSuccess('gallerySuccess');

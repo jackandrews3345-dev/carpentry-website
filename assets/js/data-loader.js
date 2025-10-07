@@ -298,8 +298,11 @@ async function updatePageContent() {
         // Update gallery
         updateGalleryDisplay(gallery);
         
-        // Update video gallery
+        // Update video gallery (load from admin panel and YAML)
         updateVideoGallery(videos);
+        
+        // Update hero section video
+        updateHeroVideo();
         
         // Set up enhanced gallery filtering with category data
         setupEnhancedGalleryFiltering(categoryGalleries);
@@ -518,42 +521,248 @@ function populateGalleryWithCategory(categoryItems, category) {
     }
 }
 
-// Update video gallery
+// Update video gallery - load from admin panel localStorage and Firebase
 function updateVideoGallery(videos) {
-    videos.forEach(video => {
-        const videoItems = document.querySelectorAll('.video-item');
-        if (videoItems[video.spot - 1]) {
-            const videoItem = videoItems[video.spot - 1];
-            const placeholder = videoItem.querySelector('.video-placeholder');
+    console.log('📹 Updating video gallery...');
+    
+    // Load admin panel videos from localStorage
+    let adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    
+    // Try to load from Firebase if available
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        window.firebaseManager.loadData('gallery_videos').then(firebaseVideos => {
+            if (firebaseVideos && typeof firebaseVideos === 'object') {
+                console.log('📹 Loading videos from Firebase:', firebaseVideos);
+                adminVideos = { ...adminVideos, ...firebaseVideos };
+                // Update localStorage with Firebase data
+                localStorage.setItem('gallery_videos', JSON.stringify(adminVideos));
+                // Trigger another update with Firebase data
+                setTimeout(() => updateVideoGallery(videos), 100);
+            }
+        }).catch(error => {
+            console.log('⚠️ Could not load videos from Firebase:', error);
+        });
+    }
+    
+    console.log('Admin panel videos:', adminVideos);
+    
+    // Get video items in the main gallery
+    const videoItems = document.querySelectorAll('.video-item');
+    console.log(`Found ${videoItems.length} video slots on page`);
+    
+    // Update each video slot
+    for (let i = 1; i <= videoItems.length; i++) {
+        const videoItem = videoItems[i - 1];
+        const placeholder = videoItem.querySelector('.video-placeholder');
+        
+        if (!placeholder) continue;
+        
+        // Check for admin uploaded video
+        const adminVideo = adminVideos[`spot${i}`];
+        
+        if (adminVideo) {
+            console.log(`📹 Loading admin video for spot ${i}`);
+            // Replace placeholder with video element
+            const videoElement = document.createElement('video');
+            videoElement.src = adminVideo;
+            videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer;';
+            videoElement.muted = true;
+            videoElement.preload = 'metadata';
             
-            if (placeholder) {
-                if (video.video_url && video.video_url.trim() !== '') {
-                    // Replace placeholder with video thumbnail and play button
-                    placeholder.innerHTML = `
-                        <div class="video-thumbnail" style="position: relative; width: 100%; height: 100%; background-image: url('${video.thumbnail}'); background-size: cover; background-position: center;">
-                            <div class="play-button" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
-                                <i class="fas fa-play-circle"></i>
-                            </div>
-                            <div class="video-info" style="position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
-                                <h4 style="margin: 0; font-size: 1.1rem;">${video.title}</h4>
-                                ${video.duration ? `<span style="font-size: 0.9rem;">${video.duration}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Add click handler for video playback
-                    placeholder.style.cursor = 'pointer';
-                    placeholder.onclick = () => openVideoModal(video.video_url, video.title);
+            // Create video container with play overlay
+            const videoContainer = document.createElement('div');
+            videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px;';
+            
+            const playOverlay = document.createElement('div');
+            playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
+            playOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+            
+            const videoTitle = document.createElement('div');
+            videoTitle.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);';
+            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>`;
+            
+            videoContainer.appendChild(videoElement);
+            videoContainer.appendChild(playOverlay);
+            videoContainer.appendChild(videoTitle);
+            
+            // Replace placeholder
+            placeholder.innerHTML = '';
+            placeholder.appendChild(videoContainer);
+            
+            // Add click handlers for video playback
+            const playVideo = () => {
+                if (videoElement.paused) {
+                    videoElement.play();
+                    playOverlay.style.display = 'none';
+                    videoElement.controls = true;
                 } else {
-                    // Update placeholder text
-                    const titleElement = placeholder.querySelector('p');
-                    if (titleElement) {
-                        titleElement.textContent = video.title;
+                    videoElement.pause();
+                    playOverlay.style.display = 'block';
+                    videoElement.controls = false;
+                }
+            };
+            
+            videoElement.onclick = playVideo;
+            playOverlay.onclick = playVideo;
+            
+            // Show play overlay when video ends
+            videoElement.onended = () => {
+                playOverlay.style.display = 'block';
+                videoElement.controls = false;
+            };
+            
+            // Hide play overlay on play, show on pause
+            videoElement.onplay = () => {
+                playOverlay.style.display = 'none';
+            };
+            
+            videoElement.onpause = () => {
+                if (!videoElement.ended) {
+                    playOverlay.style.display = 'block';
+                }
+            };
+            
+        } else {
+            // Check YAML videos for this slot
+            const yamlVideo = videos.find(v => v.spot === i);
+            if (yamlVideo && yamlVideo.video_url && yamlVideo.video_url.trim() !== '') {
+                console.log(`📹 Loading YAML video for spot ${i}:`, yamlVideo.video_url);
+                // Replace placeholder with video thumbnail and play button
+                placeholder.innerHTML = `
+                    <div class="video-thumbnail" style="position: relative; width: 100%; height: 200px; background-image: url('${yamlVideo.thumbnail}'); background-size: cover; background-position: center; border-radius: 8px; cursor: pointer;">
+                        <div class="play-button" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="video-info" style="position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                            <h4 style="margin: 0; font-size: 1.1rem;">${yamlVideo.title}</h4>
+                            ${yamlVideo.duration ? `<span style="font-size: 0.9rem;">${yamlVideo.duration}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Add click handler for video playback
+                placeholder.style.cursor = 'pointer';
+                placeholder.onclick = () => openVideoModal(yamlVideo.video_url, yamlVideo.title);
+            } else {
+                // Keep original placeholder
+                const iconElement = placeholder.querySelector('i');
+                const textElement = placeholder.querySelector('p');
+                if (iconElement && textElement) {
+                    // Update placeholder text if available
+                    if (yamlVideo && yamlVideo.title) {
+                        textElement.textContent = yamlVideo.title;
+                    } else {
+                        textElement.textContent = `Project Video ${i}`;
                     }
                 }
             }
         }
-    });
+    }
+    
+    console.log('📹 Video gallery update complete');
+}
+
+// Update hero section video
+function updateHeroVideo() {
+    console.log('🎬 Updating hero section video...');
+    
+    // Load admin panel videos from localStorage
+    let adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    
+    // Try to load from Firebase if available
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        window.firebaseManager.loadData('gallery_videos').then(firebaseVideos => {
+            if (firebaseVideos && typeof firebaseVideos === 'object') {
+                console.log('🎬 Loading hero videos from Firebase:', firebaseVideos);
+                adminVideos = { ...adminVideos, ...firebaseVideos };
+                // Update localStorage with Firebase data
+                localStorage.setItem('gallery_videos', JSON.stringify(adminVideos));
+                // Trigger another update with Firebase data
+                setTimeout(() => updateHeroVideo(), 100);
+            }
+        }).catch(error => {
+            console.log('⚠️ Could not load hero videos from Firebase:', error);
+        });
+    }
+    
+    const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
+    
+    if (!heroVideoContainer) {
+        console.log('Hero video container not found');
+        return;
+    }
+    
+    // Check if we have a featured video (use spot1 as hero video)
+    const heroVideo = adminVideos['spot1'];
+    
+    if (heroVideo) {
+        console.log('🎬 Loading hero video from admin panel');
+        
+        // Create video element
+        const videoElement = document.createElement('video');
+        videoElement.src = heroVideo;
+        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer;';
+        videoElement.muted = true;
+        videoElement.preload = 'metadata';
+        
+        // Create video container with play overlay
+        const videoContainer = document.createElement('div');
+        videoContainer.style.cssText = 'position: relative; width: 100%; height: 100%;';
+        
+        const playOverlay = document.createElement('div');
+        playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
+        playOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+        
+        const videoTitle = document.createElement('div');
+        videoTitle.style.cssText = 'position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;';
+        videoTitle.innerHTML = '<p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>';
+        
+        videoContainer.appendChild(videoElement);
+        videoContainer.appendChild(playOverlay);
+        videoContainer.appendChild(videoTitle);
+        
+        // Replace placeholder
+        heroVideoContainer.innerHTML = '';
+        heroVideoContainer.appendChild(videoContainer);
+        
+        // Add click handlers for video playback
+        const playVideo = () => {
+            if (videoElement.paused) {
+                videoElement.play();
+                playOverlay.style.display = 'none';
+                videoElement.controls = true;
+            } else {
+                videoElement.pause();
+                playOverlay.style.display = 'block';
+                videoElement.controls = false;
+            }
+        };
+        
+        videoElement.onclick = playVideo;
+        playOverlay.onclick = playVideo;
+        
+        // Show play overlay when video ends
+        videoElement.onended = () => {
+            playOverlay.style.display = 'block';
+            videoElement.controls = false;
+        };
+        
+        // Hide play overlay on play, show on pause
+        videoElement.onplay = () => {
+            playOverlay.style.display = 'none';
+        };
+        
+        videoElement.onpause = () => {
+            if (!videoElement.ended) {
+                playOverlay.style.display = 'block';
+            }
+        };
+    } else {
+        console.log('No hero video found in admin panel');
+        // Keep original placeholder styling
+    }
+    
+    console.log('🎬 Hero video update complete');
 }
 
 // Open video modal (you'll need to implement this)
@@ -714,6 +923,49 @@ window.forceFirebaseSync = async function() {
     } else {
         console.log('❌ Firebase not ready for sync');
     }
+};
+
+// Add global function to test video loading
+window.testVideoGallery = function() {
+    console.log('=== Video Gallery Debug ===');
+    const adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    console.log('localStorage gallery_videos:', adminVideos);
+    
+    const videoItems = document.querySelectorAll('.video-item');
+    console.log('Video items found on page:', videoItems.length);
+    
+    const heroVideo = document.querySelector('.hero-video .video-placeholder');
+    console.log('Hero video container exists:', !!heroVideo);
+    
+    if (window.firebaseManager) {
+        console.log('Firebase Manager exists:', true);
+        console.log('Firebase ready:', window.firebaseManager.isFirebaseReady);
+        
+        if (window.firebaseManager.isFirebaseReady) {
+            window.firebaseManager.loadData('gallery_videos').then(data => {
+                console.log('Firebase video data:', data);
+            }).catch(err => {
+                console.log('Firebase load error:', err);
+            });
+        }
+    } else {
+        console.log('Firebase Manager exists:', false);
+    }
+    
+    // Force video gallery update
+    console.log('Forcing video gallery update...');
+    updateVideoGallery([]);
+    updateHeroVideo();
+    
+    console.log('=== End Video Debug ===');
+};
+
+// Add global function to refresh videos
+window.refreshVideos = function() {
+    console.log('🖪 Refreshing all videos...');
+    updateVideoGallery([]);
+    updateHeroVideo();
+    console.log('✅ Video refresh complete');
 };
 
 // Check for profile photo updates periodically
