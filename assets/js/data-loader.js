@@ -1071,6 +1071,9 @@ window.checkVideos = function() {
     console.log('=== End Video Check ===');
 };
 
+// Make immediate video update available globally for manual testing
+window.forceImmediateVideoUpdate = forceImmediateVideoUpdate;
+
 // Add global function to refresh videos
 window.refreshVideos = function() {
     console.log('🖪 Refreshing all videos...');
@@ -1412,10 +1415,69 @@ async function loadProfileFromFirebase() {
     }
 }
 
+// Force immediate video update on page load
+function forceImmediateVideoUpdate() {
+    console.log('🚀 Force immediate video update...');
+    
+    const adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    console.log('Admin videos found:', adminVideos);
+    
+    if (Object.keys(adminVideos).length === 0) {
+        console.log('No admin videos found, skipping immediate update');
+        return;
+    }
+    
+    // Direct replacement of video placeholders
+    for (let i = 1; i <= 3; i++) {
+        const videoItem = document.querySelector(`.video-item:nth-child(${i}) .video-placeholder`);
+        const adminVideo = adminVideos[`spot${i}`];
+        
+        if (videoItem && adminVideo) {
+            console.log(`🎬 Direct replacing video spot ${i}`);
+            
+            // Create direct video replacement
+            videoItem.innerHTML = `
+                <div style="position: relative; width: 100%; height: 200px; cursor: pointer;" onclick="window.openLightbox('${adminVideo}', 'Project Video ${i}', 'video')">
+                    <video src="${adminVideo}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted preload="metadata"></video>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div style="position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                        <h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Also update hero video
+    const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
+    const heroVideo = adminVideos['spot1'];
+    
+    if (heroVideoContainer && heroVideo) {
+        console.log('🎬 Direct replacing hero video');
+        heroVideoContainer.innerHTML = `
+            <div style="position: relative; width: 100%; height: 100%; cursor: pointer;" onclick="window.openLightbox('${heroVideo}', 'Featured Work Video', 'video')">
+                <video src="${heroVideo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" muted preload="metadata"></video>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;">
+                    <p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    console.log('🚀 Immediate video update complete');
+}
+
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         updatePageContent();
+        // Force immediate video update
+        setTimeout(forceImmediateVideoUpdate, 1000);
         // Also try to refresh profile photo immediately
         setTimeout(refreshProfilePhoto, 500);
         // Start checking for updates
@@ -1423,6 +1485,8 @@ if (document.readyState === 'loading') {
     });
 } else {
     updatePageContent();
+    // Force immediate video update
+    setTimeout(forceImmediateVideoUpdate, 1000);
     // Also try to refresh profile photo immediately
     setTimeout(refreshProfilePhoto, 500);
     // Start checking for updates
