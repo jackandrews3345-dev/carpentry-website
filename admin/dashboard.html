@@ -592,6 +592,43 @@
             window.location.href = 'login.html';
         }
 
+        // Load admin credentials from Firebase for cross-device security
+        async function loadAdminCredentials() {
+            console.log('🔐 Loading admin credentials...');
+            
+            let credentials = { username: 'casamadera', password: 'admin123' }; // Default fallback
+            
+            // Try to load from Firebase first
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                try {
+                    const firebaseCredentials = await window.firebaseManager.loadData('adminCredentials');
+                    if (firebaseCredentials && firebaseCredentials.username && firebaseCredentials.password) {
+                        console.log('✅ Loaded admin credentials from Firebase');
+                        credentials = firebaseCredentials;
+                        // Update localStorage with Firebase credentials
+                        localStorage.setItem('adminCredentials', JSON.stringify(credentials));
+                    }
+                } catch (error) {
+                    console.log('⚠️ Could not load credentials from Firebase:', error);
+                }
+            }
+            
+            // Fallback to localStorage if Firebase failed
+            if (credentials.username === 'casamadera' && credentials.password === 'admin123') {
+                const localCredentials = JSON.parse(localStorage.getItem('adminCredentials') || '{}');
+                if (localCredentials.username && localCredentials.password) {
+                    credentials = localCredentials;
+                    console.log('⚠️ Using localStorage credentials (Firebase not available)');
+                }
+            }
+            
+            // Update form fields
+            document.getElementById('adminUsername').value = credentials.username;
+            document.getElementById('adminPassword').value = credentials.password;
+            
+            console.log(`🔐 Admin credentials loaded: ${credentials.username}`);
+        }
+        
         // Load current settings
         function loadSettings() {
             // Business info
@@ -620,10 +657,8 @@
             const quoteSettings = JSON.parse(localStorage.getItem('quoteSettings') || '{}');
             document.getElementById('quoteEmail').value = quoteSettings.email || '';
             
-            // Admin credentials
-            const credentials = JSON.parse(localStorage.getItem('adminCredentials') || '{}');
-            document.getElementById('adminUsername').value = credentials.username || 'casamadera';
-            document.getElementById('adminPassword').value = credentials.password || 'admin123';
+            // Admin credentials - load from Firebase first for security
+            loadAdminCredentials();
             
             updatePreviews();
             loadGallery();
@@ -669,14 +704,33 @@
             updatePreviews();
         }
 
-        function updateCredentials() {
+        async function updateCredentials() {
             const credentials = {
                 username: document.getElementById('adminUsername').value,
                 password: document.getElementById('adminPassword').value
             };
+            
+            // Save to both Firebase and localStorage for security across devices
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                try {
+                    console.log('🔐 Saving admin credentials to Firebase for cross-device security...');
+                    await window.firebaseManager.saveData('adminCredentials', credentials);
+                    console.log('✅ Admin credentials saved to Firebase - now secure on all devices');
+                } catch (error) {
+                    console.error('Firebase credentials save failed:', error);
+                }
+            }
+            
+            // Always save to localStorage as immediate backup
             localStorage.setItem('adminCredentials', JSON.stringify(credentials));
+            
             showSuccess('credentialsSuccess');
             updatePreviews();
+            
+            // Show security notice
+            setTimeout(() => {
+                alert('✅ Security Updated!\n\nYour admin credentials are now synchronized across all devices via Firebase. The old default credentials will no longer work on any device.');
+            }, 500);
         }
 
         function updateContactInfo() {

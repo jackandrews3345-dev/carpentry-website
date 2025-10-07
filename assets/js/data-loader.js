@@ -1141,6 +1141,31 @@ window.refreshGallery = function() {
     console.log('✅ Gallery refresh complete');
 };
 
+// Add global function to test admin credentials
+window.testAdminCredentials = function() {
+    console.log('=== Admin Credentials Debug ===');
+    
+    const localCredentials = JSON.parse(localStorage.getItem('adminCredentials') || '{}');
+    console.log('localStorage adminCredentials:', localCredentials);
+    
+    if (window.firebaseManager) {
+        console.log('Firebase Manager exists:', true);
+        console.log('Firebase ready:', window.firebaseManager.isFirebaseReady);
+        
+        if (window.firebaseManager.isFirebaseReady) {
+            window.firebaseManager.loadData('adminCredentials').then(data => {
+                console.log('Firebase adminCredentials:', data);
+            }).catch(err => {
+                console.log('Firebase credentials load error:', err);
+            });
+        }
+    } else {
+        console.log('Firebase Manager exists:', false);
+    }
+    
+    console.log('=== End Admin Credentials Debug ===');
+};
+
 // Load gallery images from Firebase and sync to localStorage
 async function loadGalleryImagesFromFirebase() {
     if (!window.firebaseManager || !window.firebaseManager.isFirebaseReady) {

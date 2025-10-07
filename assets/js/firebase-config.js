@@ -145,6 +145,7 @@ class FirebaseManager {
             'contactInfo', 
             'socialMedia',
             'quoteSettings',
+            'adminCredentials',
             'casa_profile_photo',
             'gallery_furniture',
             'gallery_renovation', 

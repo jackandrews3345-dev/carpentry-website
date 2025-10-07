@@ -152,56 +152,100 @@
         </form>
 
         <div class="credentials-info">
-            <h4>Default Login Credentials:</h4>
-            <p><strong>Username:</strong> <code>casamadera</code></p>
-            <p><strong>Password:</strong> <code>admin123</code></p>
-            <p><em>You can change these in the dashboard settings.</em></p>
+            <h4>Secure Login System:</h4>
+            <p><strong>Default Username:</strong> <code>casamadera</code></p>
+            <p><strong>Default Password:</strong> <code>admin123</code></p>
+            <p><em>🔐 Credentials sync across all devices via Firebase for security.</em></p>
+            <p><em>Change these in dashboard settings to secure your admin panel.</em></p>
         </div>
     </div>
 
     <script>
-        // Default login credentials (can be changed in dashboard)
-        function getAdminCredentials() {
-            const stored = localStorage.getItem('adminCredentials');
-            if (stored) {
-                return JSON.parse(stored);
-            }
-            return {
+        // Load admin credentials from Firebase or localStorage
+        async function getAdminCredentials() {
+            console.log('🔐 Loading admin credentials for login...');
+            
+            // Default fallback credentials
+            let credentials = {
                 username: 'casamadera',
                 password: 'admin123'
             };
+            
+            // Try to load from Firebase first (if available)
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                try {
+                    const firebaseCredentials = await window.firebaseManager.loadData('adminCredentials');
+                    if (firebaseCredentials && firebaseCredentials.username && firebaseCredentials.password) {
+                        console.log('✅ Using Firebase admin credentials (secure)');
+                        credentials = firebaseCredentials;
+                        // Update localStorage with Firebase credentials
+                        localStorage.setItem('adminCredentials', JSON.stringify(credentials));
+                        return credentials;
+                    }
+                } catch (error) {
+                    console.log('⚠️ Could not load credentials from Firebase:', error);
+                }
+            }
+            
+            // Fallback to localStorage
+            const stored = localStorage.getItem('adminCredentials');
+            if (stored) {
+                const localCredentials = JSON.parse(stored);
+                if (localCredentials.username && localCredentials.password) {
+                    console.log('⚠️ Using localStorage credentials (may be outdated)');
+                    return localCredentials;
+                }
+            }
+            
+            console.log('⚠️ Using default credentials (not secure)');
+            return credentials;
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMessage');
             const successMsg = document.getElementById('successMessage');
+            const loginBtn = document.querySelector('.login-btn');
             
-            // Hide previous messages
+            // Hide previous messages and show loading
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
+            loginBtn.textContent = 'Checking credentials...';
+            loginBtn.disabled = true;
             
-            const credentials = getAdminCredentials();
-            
-            // Check credentials
-            if (username === credentials.username && password === credentials.password) {
-                // Set login session
-                localStorage.setItem('adminLoggedIn', 'true');
-                localStorage.setItem('loginTimestamp', Date.now().toString());
+            try {
+                // Load credentials from Firebase or localStorage
+                const credentials = await getAdminCredentials();
                 
-                // Show success message
-                successMsg.style.display = 'block';
-                
-                // Redirect to admin dashboard
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
-            } else {
-                // Show error message
+                // Check credentials
+                if (username === credentials.username && password === credentials.password) {
+                    // Set login session
+                    localStorage.setItem('adminLoggedIn', 'true');
+                    localStorage.setItem('loginTimestamp', Date.now().toString());
+                    
+                    // Show success message
+                    successMsg.style.display = 'block';
+                    loginBtn.textContent = 'Login Successful!';
+                    
+                    // Redirect to admin dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    // Show error message
+                    errorMsg.style.display = 'block';
+                    loginBtn.textContent = 'Login';
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMsg.textContent = 'Login system error. Please try again.';
                 errorMsg.style.display = 'block';
+                loginBtn.textContent = 'Login';
+                loginBtn.disabled = false;
             }
         });
 
@@ -226,5 +270,12 @@
         // Check login status when page loads
         checkLoginStatus();
     </script>
+    
+    <!-- Firebase SDK for credential syncing -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="../assets/js/firebase-config.js"></script>
 </body>
 </html>
