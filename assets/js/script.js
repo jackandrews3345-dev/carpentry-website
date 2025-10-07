@@ -314,8 +314,8 @@ function initializeLightbox() {
     
     console.log('Lightbox elements found, setting up functionality...');
     
-    // Simple function to open lightbox
-    function openLightbox(src, alt, type = 'image') {
+    // Simple function to open lightbox - make globally accessible
+    window.openLightbox = function(src, alt, type = 'image') {
         console.log('Opening lightbox with:', src, alt, type);
         
         if (type === 'video') {
@@ -331,7 +331,10 @@ function initializeLightbox() {
         
         lightbox.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-    }
+    };
+    
+    // Keep local reference for internal use
+    const openLightbox = window.openLightbox;
     
     // Simple function to close lightbox
     function closeLightbox() {

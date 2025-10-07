@@ -673,38 +673,31 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             placeholder.innerHTML = '';
             placeholder.appendChild(videoContainer);
             
-            // Add click handlers for video playback
-            const playVideo = () => {
-                if (videoElement.paused) {
-                    videoElement.play();
-                    playOverlay.style.display = 'none';
-                    videoElement.controls = true;
+            // Add click handlers for fullscreen video playback using lightbox
+            const openFullscreenVideo = () => {
+                console.log(`🎬 Opening video ${i} in fullscreen lightbox`);
+                // Use the existing lightbox system for fullscreen video
+                if (typeof openLightbox === 'function') {
+                    openLightbox(adminVideo, `Project Video ${i}`, 'video');
                 } else {
-                    videoElement.pause();
-                    playOverlay.style.display = 'block';
-                    videoElement.controls = false;
+                    console.log('Lightbox not available, falling back to inline play');
+                    // Fallback to inline video if lightbox not available
+                    if (videoElement.paused) {
+                        videoElement.play();
+                        playOverlay.style.display = 'none';
+                        videoElement.controls = true;
+                    } else {
+                        videoElement.pause();
+                        playOverlay.style.display = 'block';
+                        videoElement.controls = false;
+                    }
                 }
             };
             
-            videoElement.onclick = playVideo;
-            playOverlay.onclick = playVideo;
+            videoElement.onclick = openFullscreenVideo;
+            playOverlay.onclick = openFullscreenVideo;
             
-            // Show play overlay when video ends
-            videoElement.onended = () => {
-                playOverlay.style.display = 'block';
-                videoElement.controls = false;
-            };
-            
-            // Hide play overlay on play, show on pause
-            videoElement.onplay = () => {
-                playOverlay.style.display = 'none';
-            };
-            
-            videoElement.onpause = () => {
-                if (!videoElement.ended) {
-                    playOverlay.style.display = 'block';
-                }
-            };
+            // Note: Video now opens in fullscreen lightbox instead of inline controls
             
         } else {
             // Check YAML videos for this slot
@@ -832,38 +825,31 @@ function updateHeroVideo(skipFirebaseLoad = false) {
         heroVideoContainer.innerHTML = '';
         heroVideoContainer.appendChild(videoContainer);
         
-        // Add click handlers for video playback
-        const playVideo = () => {
-            if (videoElement.paused) {
-                videoElement.play();
-                playOverlay.style.display = 'none';
-                videoElement.controls = true;
+        // Add click handlers for fullscreen video playback using lightbox
+        const openFullscreenHeroVideo = () => {
+            console.log('🎬 Opening hero video in fullscreen lightbox');
+            // Use the existing lightbox system for fullscreen video
+            if (typeof openLightbox === 'function') {
+                openLightbox(heroVideo, 'Featured Work Video', 'video');
             } else {
-                videoElement.pause();
-                playOverlay.style.display = 'block';
-                videoElement.controls = false;
+                console.log('Lightbox not available, falling back to inline play');
+                // Fallback to inline video if lightbox not available
+                if (videoElement.paused) {
+                    videoElement.play();
+                    playOverlay.style.display = 'none';
+                    videoElement.controls = true;
+                } else {
+                    videoElement.pause();
+                    playOverlay.style.display = 'block';
+                    videoElement.controls = false;
+                }
             }
         };
         
-        videoElement.onclick = playVideo;
-        playOverlay.onclick = playVideo;
+        videoElement.onclick = openFullscreenHeroVideo;
+        playOverlay.onclick = openFullscreenHeroVideo;
         
-        // Show play overlay when video ends
-        videoElement.onended = () => {
-            playOverlay.style.display = 'block';
-            videoElement.controls = false;
-        };
-        
-        // Hide play overlay on play, show on pause
-        videoElement.onplay = () => {
-            playOverlay.style.display = 'none';
-        };
-        
-        videoElement.onpause = () => {
-            if (!videoElement.ended) {
-                playOverlay.style.display = 'block';
-            }
-        };
+        // Note: Hero video now opens in fullscreen lightbox instead of inline controls
     } else {
         console.log('No hero video found in admin panel');
         // Keep original placeholder styling
