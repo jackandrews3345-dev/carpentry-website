@@ -911,14 +911,36 @@
             document.getElementById(`${category}-upload-${spotNumber}`).click();
         }
 
-        function uploadCategoryImage(category, spotNumber, input) {
+        async function uploadCategoryImage(category, spotNumber, input) {
             const file = input.files[0];
             if (file) {
+                // Show loading state
+                const imageSpot = document.getElementById(`${category}-spot-${spotNumber}`);
+                if (imageSpot) {
+                    imageSpot.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 120px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-right: 10px;"></i>
+                            <span>Uploading image...</span>
+                        </div>
+                    `;
+                }
+                
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = async function(e) {
                     const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
                     categoryData[`spot${spotNumber}`] = e.target.result;
                     localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
+                    
+                    // Save to Firebase if available
+                    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                        try {
+                            console.log(`🖼️ Uploading ${category} image ${spotNumber} to Firebase...`);
+                            await window.firebaseManager.saveData(`gallery_${category}`, categoryData);
+                            console.log(`✅ ${category} image ${spotNumber} uploaded to Firebase`);
+                        } catch (error) {
+                            console.error(`Firebase ${category} image upload failed:`, error);
+                        }
+                    }
                     
                     loadCategoryGallery(category);
                     showSuccess('gallerySuccess');
@@ -927,11 +949,22 @@
             }
         }
 
-        function removeCategoryImage(category, spotNumber) {
+        async function removeCategoryImage(category, spotNumber) {
             if (confirm('Are you sure you want to remove this image?')) {
                 const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
                 delete categoryData[`spot${spotNumber}`];
                 localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
+                
+                // Save to Firebase if available
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                    try {
+                        console.log(`🗑️ Removing ${category} image ${spotNumber} from Firebase...`);
+                        await window.firebaseManager.saveData(`gallery_${category}`, categoryData);
+                        console.log(`✅ ${category} image ${spotNumber} removed from Firebase`);
+                    } catch (error) {
+                        console.error(`Firebase ${category} image removal failed:`, error);
+                    }
+                }
                 
                 loadCategoryGallery(category);
                 showSuccess('gallerySuccess');
@@ -990,11 +1023,22 @@
             }
         }
 
-        function removeVideo(spotNumber) {
+        async function removeVideo(spotNumber) {
             if (confirm('Are you sure you want to remove this video?')) {
                 const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
                 delete videoData[`spot${spotNumber}`];
                 localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+                
+                // Save to Firebase if available
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                    try {
+                        console.log(`🗑️ Removing video ${spotNumber} from Firebase...`);
+                        await window.firebaseManager.saveData('gallery_videos', videoData);
+                        console.log(`✅ Video ${spotNumber} removed from Firebase`);
+                    } catch (error) {
+                        console.error('Firebase video removal failed:', error);
+                    }
+                }
                 
                 loadVideoGallery();
                 showSuccess('gallerySuccess');

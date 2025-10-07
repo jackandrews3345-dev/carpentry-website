@@ -267,6 +267,9 @@ async function updatePageContent() {
         // Update gallery
         updateGalleryDisplay(gallery);
         
+        // Load admin gallery images into gallery spots
+        updateGalleryFromAdmin();
+        
         // Update video gallery (load from admin panel and YAML)
         updateVideoGallery(videos);
         
@@ -604,6 +607,9 @@ function updateVideoGallery(videos) {
             console.log('⚠️ Could not load videos from Firebase:', error);
         });
     }
+    
+    // Also load gallery images from Firebase
+    loadGalleryImagesFromFirebase();
     
     console.log('Admin panel videos:', adminVideos);
     
@@ -1085,6 +1091,172 @@ window.refreshBusinessInfo = function() {
     updateBusinessInformation({ name: 'Casa Madera', description: 'Expert carpentry services in The Bahamas' });
     console.log('✅ Business refresh complete');
 };
+
+// Add global function to test gallery loading
+window.testGallery = function() {
+    console.log('=== Gallery Debug ===');
+    
+    const furnitureGallery = JSON.parse(localStorage.getItem('gallery_furniture') || '{}');
+    const renovationGallery = JSON.parse(localStorage.getItem('gallery_renovation') || '{}');
+    const customGallery = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
+    
+    console.log('localStorage gallery data:');
+    console.log('  gallery_furniture:', furnitureGallery);
+    console.log('  gallery_renovation:', renovationGallery);
+    console.log('  gallery_custom:', customGallery);
+    
+    const gallerySpots = document.querySelectorAll('[id^="gallery-spot-"]');
+    console.log(`Found ${gallerySpots.length} gallery spots on page`);
+    
+    if (window.firebaseManager) {
+        console.log('Firebase Manager exists:', true);
+        console.log('Firebase ready:', window.firebaseManager.isFirebaseReady);
+        
+        if (window.firebaseManager.isFirebaseReady) {
+            ['furniture', 'renovation', 'custom'].forEach(category => {
+                window.firebaseManager.loadData(`gallery_${category}`).then(data => {
+                    console.log(`Firebase gallery_${category} data:`, data);
+                }).catch(err => {
+                    console.log(`Firebase gallery_${category} load error:`, err);
+                });
+            });
+        }
+    } else {
+        console.log('Firebase Manager exists:', false);
+    }
+    
+    // Force gallery update
+    console.log('Forcing gallery update...');
+    updateGalleryFromAdmin();
+    loadGalleryImagesFromFirebase();
+    
+    console.log('=== End Gallery Debug ===');
+};
+
+// Add global function to refresh gallery
+window.refreshGallery = function() {
+    console.log('🖼️ Refreshing gallery...');
+    loadGalleryImagesFromFirebase();
+    updateGalleryFromAdmin();
+    console.log('✅ Gallery refresh complete');
+};
+
+// Load gallery images from Firebase and sync to localStorage
+async function loadGalleryImagesFromFirebase() {
+    if (!window.firebaseManager || !window.firebaseManager.isFirebaseReady) {
+        return;
+    }
+    
+    const galleryCategories = ['furniture', 'renovation', 'custom'];
+    
+    for (const category of galleryCategories) {
+        try {
+            const firebaseGallery = await window.firebaseManager.loadData(`gallery_${category}`);
+            if (firebaseGallery && typeof firebaseGallery === 'object') {
+                console.log(`🖼️ Loading ${category} gallery from Firebase:`, firebaseGallery);
+                
+                // Update localStorage with Firebase data
+                const localGallery = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
+                const combinedGallery = { ...localGallery, ...firebaseGallery };
+                localStorage.setItem(`gallery_${category}`, JSON.stringify(combinedGallery));
+                
+                console.log(`✅ ${category} gallery synced from Firebase`);
+            }
+        } catch (error) {
+            console.log(`⚠️ Could not load ${category} gallery from Firebase:`, error);
+        }
+    }
+}
+
+// Update main website gallery spots with admin uploaded images
+function updateGalleryFromAdmin() {
+    console.log('🖼️ Updating main gallery with admin images...');
+    
+    // Load admin gallery data
+    const furnitureGallery = JSON.parse(localStorage.getItem('gallery_furniture') || '{}');
+    const renovationGallery = JSON.parse(localStorage.getItem('gallery_renovation') || '{}');
+    const customGallery = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
+    
+    console.log('Admin gallery data:');
+    console.log('  Furniture:', furnitureGallery);
+    console.log('  Renovation:', renovationGallery);
+    console.log('  Custom:', customGallery);
+    
+    // Combine all images into a single pool
+    const allImages = [];
+    
+    // Add furniture images
+    Object.keys(furnitureGallery).forEach(key => {
+        if (furnitureGallery[key]) {
+            allImages.push({
+                src: furnitureGallery[key],
+                category: 'furniture',
+                title: `Custom Furniture Project`
+            });
+        }
+    });
+    
+    // Add renovation images
+    Object.keys(renovationGallery).forEach(key => {
+        if (renovationGallery[key]) {
+            allImages.push({
+                src: renovationGallery[key],
+                category: 'renovation', 
+                title: `Home Renovation Project`
+            });
+        }
+    });
+    
+    // Add custom work images
+    Object.keys(customGallery).forEach(key => {
+        if (customGallery[key]) {
+            allImages.push({
+                src: customGallery[key],
+                category: 'custom',
+                title: `Custom Work Project`
+            });
+        }
+    });
+    
+    console.log(`Found ${allImages.length} admin images to display`);
+    
+    // Update gallery spots with admin images
+    for (let i = 1; i <= 6; i++) {
+        const gallerySpot = document.getElementById(`gallery-spot-${i}`);
+        if (gallerySpot && allImages[i - 1]) {
+            const image = allImages[i - 1];
+            console.log(`Updating gallery-spot-${i} with ${image.category} image`);
+            
+            // Update data-category attribute
+            gallerySpot.setAttribute('data-category', image.category);
+            
+            // Replace placeholder with actual image
+            const placeholder = gallerySpot.querySelector('.image-placeholder');
+            if (placeholder) {
+                const img = document.createElement('img');
+                img.src = image.src;
+                img.alt = image.title;
+                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px;';
+                img.className = 'gallery-image';
+                
+                // Replace placeholder content
+                placeholder.innerHTML = '';
+                placeholder.appendChild(img);
+                
+                // Update title if there's a p element
+                const titleElement = document.createElement('p');
+                titleElement.textContent = image.title;
+                titleElement.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); margin: 0; font-size: 0.9rem; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 3px;';
+                placeholder.appendChild(titleElement);
+                
+                // Make the placeholder relative for positioning
+                placeholder.style.position = 'relative';
+            }
+        }
+    }
+    
+    console.log('✅ Main gallery updated with admin images');
+}
 
 // Check for profile photo updates periodically
 function checkForProfileUpdates() {
