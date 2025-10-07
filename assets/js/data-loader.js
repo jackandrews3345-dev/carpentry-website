@@ -586,30 +586,47 @@ function populateGalleryWithCategory(categoryItems, category) {
 }
 
 // Update video gallery - load from admin panel localStorage and Firebase
-function updateVideoGallery(videos) {
+let videoGalleryUpdating = false; // Prevent recursive updates
+
+function updateVideoGallery(videos, skipFirebaseLoad = false) {
+    // Prevent multiple simultaneous updates that cause glitching
+    if (videoGalleryUpdating && !skipFirebaseLoad) {
+        console.log('📹 Video gallery update already in progress, skipping...');
+        return;
+    }
+    
     console.log('📹 Updating video gallery...');
+    videoGalleryUpdating = true;
     
     // Load admin panel videos from localStorage
     let adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
     
-    // Try to load from Firebase if available
-    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+    // Try to load from Firebase if available (only on initial load)
+    if (!skipFirebaseLoad && window.firebaseManager && window.firebaseManager.isFirebaseReady) {
         window.firebaseManager.loadData('gallery_videos').then(firebaseVideos => {
             if (firebaseVideos && typeof firebaseVideos === 'object') {
                 console.log('📹 Loading videos from Firebase:', firebaseVideos);
-                adminVideos = { ...adminVideos, ...firebaseVideos };
-                // Update localStorage with Firebase data
-                localStorage.setItem('gallery_videos', JSON.stringify(adminVideos));
-                // Trigger another update with Firebase data
-                setTimeout(() => updateVideoGallery(videos), 100);
+                const combinedVideos = { ...adminVideos, ...firebaseVideos };
+                // Only update if data actually changed
+                const currentData = JSON.stringify(adminVideos);
+                const newData = JSON.stringify(combinedVideos);
+                if (currentData !== newData) {
+                    localStorage.setItem('gallery_videos', newData);
+                    // Trigger update with Firebase data but skip Firebase loading
+                    setTimeout(() => {
+                        videoGalleryUpdating = false;
+                        updateVideoGallery(videos, true);
+                    }, 50);
+                    return;
+                }
             }
+            videoGalleryUpdating = false;
         }).catch(error => {
             console.log('⚠️ Could not load videos from Firebase:', error);
+            videoGalleryUpdating = false;
         });
+        return; // Exit early, will resume in Firebase callback
     }
-    
-    // Also load gallery images from Firebase
-    loadGalleryImagesFromFirebase();
     
     console.log('Admin panel videos:', adminVideos);
     
@@ -726,36 +743,59 @@ function updateVideoGallery(videos) {
         }
     }
     
+    // Reset the updating flag
+    videoGalleryUpdating = false;
     console.log('📹 Video gallery update complete');
 }
 
 // Update hero section video
-function updateHeroVideo() {
+let heroVideoUpdating = false; // Prevent recursive updates
+
+function updateHeroVideo(skipFirebaseLoad = false) {
+    // Prevent multiple simultaneous updates that cause glitching
+    if (heroVideoUpdating && !skipFirebaseLoad) {
+        console.log('🎬 Hero video update already in progress, skipping...');
+        return;
+    }
+    
     console.log('🎬 Updating hero section video...');
+    heroVideoUpdating = true;
     
     // Load admin panel videos from localStorage
     let adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
     
-    // Try to load from Firebase if available
-    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+    // Try to load from Firebase if available (only on initial load)
+    if (!skipFirebaseLoad && window.firebaseManager && window.firebaseManager.isFirebaseReady) {
         window.firebaseManager.loadData('gallery_videos').then(firebaseVideos => {
             if (firebaseVideos && typeof firebaseVideos === 'object') {
                 console.log('🎬 Loading hero videos from Firebase:', firebaseVideos);
-                adminVideos = { ...adminVideos, ...firebaseVideos };
-                // Update localStorage with Firebase data
-                localStorage.setItem('gallery_videos', JSON.stringify(adminVideos));
-                // Trigger another update with Firebase data
-                setTimeout(() => updateHeroVideo(), 100);
+                const combinedVideos = { ...adminVideos, ...firebaseVideos };
+                // Only update if data actually changed
+                const currentData = JSON.stringify(adminVideos);
+                const newData = JSON.stringify(combinedVideos);
+                if (currentData !== newData) {
+                    localStorage.setItem('gallery_videos', newData);
+                    // Trigger update with Firebase data but skip Firebase loading
+                    setTimeout(() => {
+                        heroVideoUpdating = false;
+                        updateHeroVideo(true);
+                    }, 50);
+                    return;
+                }
             }
+            heroVideoUpdating = false;
         }).catch(error => {
             console.log('⚠️ Could not load hero videos from Firebase:', error);
+            heroVideoUpdating = false;
         });
+        return; // Exit early, will resume in Firebase callback
     }
     
     const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
     
     if (!heroVideoContainer) {
         console.log('Hero video container not found');
+        heroVideoUpdating = false;
         return;
     }
     
@@ -829,6 +869,8 @@ function updateHeroVideo() {
         // Keep original placeholder styling
     }
     
+    // Reset the updating flag
+    heroVideoUpdating = false;
     console.log('🎬 Hero video update complete');
 }
 
@@ -1021,8 +1063,8 @@ window.testVideoGallery = function() {
     
     // Force video gallery update
     console.log('Forcing video gallery update...');
-    updateVideoGallery([]);
-    updateHeroVideo();
+    updateVideoGallery([], false); // Allow Firebase loading
+    updateHeroVideo(false); // Allow Firebase loading
     
     console.log('=== End Video Debug ===');
 };
@@ -1030,8 +1072,8 @@ window.testVideoGallery = function() {
 // Add global function to refresh videos
 window.refreshVideos = function() {
     console.log('🖪 Refreshing all videos...');
-    updateVideoGallery([]);
-    updateHeroVideo();
+    updateVideoGallery([], false); // Allow Firebase loading
+    updateHeroVideo(false); // Allow Firebase loading
     console.log('✅ Video refresh complete');
 };
 
