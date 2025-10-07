@@ -1055,12 +1055,67 @@ window.testVideoGallery = function() {
     console.log('=== End Video Debug ===');
 };
 
+// Add simple video status check
+window.checkVideos = function() {
+    console.log('=== Quick Video Check ===');
+    const videos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    console.log('Videos in localStorage:', videos);
+    
+    const videoElements = document.querySelectorAll('.video-item video, .hero-video video');
+    console.log(`Found ${videoElements.length} video elements on page`);
+    
+    videoElements.forEach((vid, i) => {
+        console.log(`Video ${i + 1}: ${vid.src ? 'HAS SRC' : 'NO SRC'}`);
+    });
+    
+    console.log('=== End Video Check ===');
+};
+
 // Add global function to refresh videos
 window.refreshVideos = function() {
     console.log('🖪 Refreshing all videos...');
+    
+    // Reset updating flags to allow fresh updates
+    videoGalleryUpdating = false;
+    heroVideoUpdating = false;
+    
     updateVideoGallery([], false); // Allow Firebase loading
     updateHeroVideo(false); // Allow Firebase loading
     console.log('✅ Video refresh complete');
+};
+
+// Add function to force video reload from Firebase
+window.forceVideoSync = async function() {
+    console.log('🔄 Forcing video sync from Firebase...');
+    
+    if (!window.firebaseManager || !window.firebaseManager.isFirebaseReady) {
+        console.log('❌ Firebase not ready for video sync');
+        return;
+    }
+    
+    try {
+        // Load videos directly from Firebase
+        const firebaseVideos = await window.firebaseManager.loadData('gallery_videos');
+        console.log('📹 Firebase videos loaded:', firebaseVideos);
+        
+        if (firebaseVideos && typeof firebaseVideos === 'object') {
+            // Update localStorage with Firebase data
+            localStorage.setItem('gallery_videos', JSON.stringify(firebaseVideos));
+            console.log('✅ Videos synced to localStorage');
+            
+            // Force video refresh
+            videoGalleryUpdating = false;
+            heroVideoUpdating = false;
+            updateVideoGallery([], true); // Skip Firebase loading since we just loaded
+            updateHeroVideo(true); // Skip Firebase loading since we just loaded
+            
+            console.log('✅ Video sync complete!');
+        } else {
+            console.log('⚠️ No videos found in Firebase');
+        }
+    } catch (error) {
+        console.error('❌ Video sync failed:', error);
+    }
 };
 
 // Add global function to test business information

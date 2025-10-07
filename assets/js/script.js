@@ -407,39 +407,10 @@ function initializeLightbox() {
             });
         });
         
-        // Add click events to video items
-        const videoItems = document.querySelectorAll('.video-item, .hero-video');
-        console.log('Found', videoItems.length, 'video items');
+        // Note: Video click handlers are now managed by data-loader.js for admin uploaded videos
+        // This prevents conflicts between placeholder videos and actual uploaded content
         
-        videoItems.forEach((item, index) => {
-            item.style.cursor = 'pointer';
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                console.log('Video item clicked:', index + 1);
-                
-                const video = item.querySelector('video');
-                if (video && video.src) {
-                    openLightbox(video.src, 'Project Video', 'video');
-                } else {
-                    const placeholderSrc = 'data:image/svg+xml;base64,' + btoa(`
-                        <svg width="800" height="450" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="100%" height="100%" fill="#343a40"/>
-                            <circle cx="400" cy="225" r="50" fill="#007acc"/>
-                            <polygon points="380,205 420,225 380,245" fill="white"/>
-                            <text x="50%" y="320" font-family="Arial" font-size="24" fill="white" text-anchor="middle">
-                                Sample Video ${index + 1}
-                            </text>
-                            <text x="50%" y="350" font-family="Arial" font-size="16" fill="#ccc" text-anchor="middle">
-                                Upload your videos in the admin panel!
-                            </text>
-                        </svg>
-                    `);
-                    openLightbox(placeholderSrc, `Sample Video ${index + 1}`, 'image');
-                }
-            });
-        });
+        console.log('Video click handling delegated to data-loader.js for admin uploaded content');
         
         console.log('Lightbox initialization complete!');
     }, 500); // Small delay to ensure DOM is ready
