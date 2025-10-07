@@ -251,46 +251,15 @@ async function updatePageContent() {
             dataLoader.loadCategoryGalleries()
         ]);
 
-        // Update contact information
-        if (contact.phone) {
-            const phoneElements = document.querySelectorAll('.phone-number, [href^="tel:"]');
-            phoneElements.forEach(el => {
-                if (el.tagName === 'A') {
-                    el.href = `tel:${contact.phone}`;
-                    el.textContent = contact.phone;
-                } else {
-                    el.textContent = contact.phone;
-                }
-            });
-        }
-
-        if (contact.email) {
-            const emailElements = document.querySelectorAll('.email-address, [href^="mailto:"]');
-            emailElements.forEach(el => {
-                if (el.tagName === 'A') {
-                    el.href = `mailto:${contact.email}`;
-                    el.textContent = contact.email;
-                } else {
-                    el.textContent = contact.email;
-                }
-            });
-        }
+        // Contact information is now handled in updateBusinessInformation()
 
         // Update social media links with delay to prevent conflicts
         setTimeout(() => {
             updateSocialMediaIcons(social);
         }, 500);
 
-        // Update business information
-        if (business.name) {
-            const nameElements = document.querySelectorAll('.business-name, [data-business="name"]');
-            nameElements.forEach(el => el.textContent = business.name);
-        }
-
-        if (business.description) {
-            const descElements = document.querySelectorAll('.business-description');
-            descElements.forEach(el => el.textContent = business.description);
-        }
+        // Update business information - prioritize admin panel data
+        updateBusinessInformation(business);
 
         // Update profile information
         updateProfilePhoto(profile);
@@ -317,6 +286,98 @@ async function updatePageContent() {
     } catch (error) {
         console.error('Error updating page content:', error);
     }
+}
+
+// Update business information - prioritize admin panel data over YAML
+function updateBusinessInformation(business) {
+    console.log('📊 Updating business information...');
+    
+    // Load admin panel business info
+    const adminBusiness = JSON.parse(localStorage.getItem('businessInfo') || '{}');
+    console.log('Admin business data:', adminBusiness);
+    console.log('YAML business data:', business);
+    
+    // Try to load from Firebase if available
+    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+        window.firebaseManager.loadData('businessInfo').then(firebaseBusiness => {
+            if (firebaseBusiness && typeof firebaseBusiness === 'object') {
+                console.log('📊 Loading business info from Firebase:', firebaseBusiness);
+                // Update localStorage with Firebase data
+                localStorage.setItem('businessInfo', JSON.stringify(firebaseBusiness));
+                // Trigger another update with Firebase data
+                setTimeout(() => updateBusinessInformation(business), 100);
+            }
+        }).catch(error => {
+            console.log('⚠️ Could not load business info from Firebase:', error);
+        });
+    }
+    
+    // Combine data with admin panel taking priority
+    const combinedBusiness = {
+        name: adminBusiness.name || business.name || 'Casa Madera',
+        phone: adminBusiness.phone || business.phone || '+1-242-555-0123', 
+        email: adminBusiness.email || business.email || 'info@casamadera.bs',
+        description: adminBusiness.description || business.description || 'Expert carpentry services in The Bahamas'
+    };
+    
+    console.log('Combined business data:', combinedBusiness);
+    
+    // Update business name
+    if (combinedBusiness.name) {
+        const nameElements = document.querySelectorAll('.business-name, [data-business="name"]');
+        console.log(`Updating ${nameElements.length} business name elements to: ${combinedBusiness.name}`);
+        nameElements.forEach(el => {
+            el.textContent = combinedBusiness.name;
+            console.log('Updated element:', el);
+        });
+    }
+    
+    // Update business description
+    if (combinedBusiness.description) {
+        const descElements = document.querySelectorAll('.business-description');
+        console.log(`Updating ${descElements.length} business description elements`);
+        descElements.forEach(el => el.textContent = combinedBusiness.description);
+    }
+    
+    // Update contact info with admin data
+    const adminContact = JSON.parse(localStorage.getItem('contactInfo') || '{}');
+    
+    // Update phone numbers
+    if (combinedBusiness.phone) {
+        const phoneElements = document.querySelectorAll('.phone-number, [href^="tel:"]');
+        console.log(`Updating ${phoneElements.length} phone elements to: ${combinedBusiness.phone}`);
+        phoneElements.forEach(el => {
+            if (el.tagName === 'A') {
+                el.href = `tel:${combinedBusiness.phone}`;
+                el.textContent = combinedBusiness.phone;
+            } else {
+                el.textContent = combinedBusiness.phone;
+            }
+        });
+    }
+    
+    // Update email addresses  
+    if (combinedBusiness.email) {
+        const emailElements = document.querySelectorAll('.email-address, [href^="mailto:"]');
+        console.log(`Updating ${emailElements.length} email elements to: ${combinedBusiness.email}`);
+        emailElements.forEach(el => {
+            if (el.tagName === 'A') {
+                el.href = `mailto:${combinedBusiness.email}`;
+                el.textContent = combinedBusiness.email;
+            } else {
+                el.textContent = combinedBusiness.email;
+            }
+        });
+    }
+    
+    // Update location if available from contact info
+    if (adminContact.address) {
+        const locationElements = document.querySelectorAll('.business-location');
+        console.log(`Updating ${locationElements.length} location elements`);
+        locationElements.forEach(el => el.textContent = adminContact.address);
+    }
+    
+    console.log('📊 Business information update complete');
 }
 
 // Update social media icons - check both YAML and admin panel data
@@ -966,6 +1027,63 @@ window.refreshVideos = function() {
     updateVideoGallery([]);
     updateHeroVideo();
     console.log('✅ Video refresh complete');
+};
+
+// Add global function to test business information
+window.testBusinessInfo = function() {
+    console.log('=== Business Info Debug ===');
+    
+    const adminBusiness = JSON.parse(localStorage.getItem('businessInfo') || '{}');
+    console.log('localStorage businessInfo:', adminBusiness);
+    
+    const adminContact = JSON.parse(localStorage.getItem('contactInfo') || '{}');
+    console.log('localStorage contactInfo:', adminContact);
+    
+    const nameElements = document.querySelectorAll('.business-name, [data-business="name"]');
+    console.log(`Found ${nameElements.length} business name elements:`);
+    nameElements.forEach((el, i) => {
+        console.log(`  ${i + 1}: ${el.tagName}.${el.className} = "${el.textContent}"`);
+    });
+    
+    const phoneElements = document.querySelectorAll('.phone-number, [href^="tel:"]');
+    console.log(`Found ${phoneElements.length} phone elements:`);
+    phoneElements.forEach((el, i) => {
+        console.log(`  ${i + 1}: ${el.tagName}.${el.className} = "${el.textContent}"`);
+    });
+    
+    const emailElements = document.querySelectorAll('.email-address, [href^="mailto:"]');
+    console.log(`Found ${emailElements.length} email elements:`);
+    emailElements.forEach((el, i) => {
+        console.log(`  ${i + 1}: ${el.tagName}.${el.className} = "${el.textContent}"`);
+    });
+    
+    if (window.firebaseManager) {
+        console.log('Firebase Manager exists:', true);
+        console.log('Firebase ready:', window.firebaseManager.isFirebaseReady);
+        
+        if (window.firebaseManager.isFirebaseReady) {
+            window.firebaseManager.loadData('businessInfo').then(data => {
+                console.log('Firebase business data:', data);
+            }).catch(err => {
+                console.log('Firebase load error:', err);
+            });
+        }
+    } else {
+        console.log('Firebase Manager exists:', false);
+    }
+    
+    // Force business info update
+    console.log('Forcing business info update...');
+    updateBusinessInformation({ name: 'Casa Madera', description: 'Expert carpentry services in The Bahamas' });
+    
+    console.log('=== End Business Debug ===');
+};
+
+// Add global function to refresh business info
+window.refreshBusinessInfo = function() {
+    console.log('📊 Refreshing business information...');
+    updateBusinessInformation({ name: 'Casa Madera', description: 'Expert carpentry services in The Bahamas' });
+    console.log('✅ Business refresh complete');
 };
 
 // Check for profile photo updates periodically
