@@ -468,11 +468,22 @@ function initializeVideoClickHandlers() {
     console.log('Found', videoItems.length, 'video items');
     
     videoItems.forEach((item, index) => {
-        // Remove any existing click events
-        const newItem = item.cloneNode(true);
-        item.parentNode.replaceChild(newItem, item);
+        // Check if this video has already been processed by data-loader
+        const processedContainer = item.querySelector('[data-video-processed="true"]');
+        if (processedContainer) {
+            console.log(`Video ${index + 1} already processed by data-loader, skipping script.js handlers`);
+            return; // Skip this video, data-loader handles it
+        }
+        
+        // Only handle videos that haven't been processed by data-loader
+        console.log(`Setting up script.js handlers for video ${index + 1}`);
         
         // Add cursor pointer
+        item.style.cursor = 'pointer';
+        
+        // Remove any existing click events and add new one
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
         newItem.style.cursor = 'pointer';
         
         // Add click event
@@ -480,13 +491,12 @@ function initializeVideoClickHandlers() {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('Video item clicked:', index + 1);
+            console.log('Video item clicked (script.js handler):', index + 1);
             
             // Check if there's an uploaded video
             const video = newItem.querySelector('video');
             if (video && video.src && !video.src.includes('placeholder')) {
                 console.log('Opening uploaded video in lightbox:', video.src);
-                console.log('openLightbox available?', typeof window.openLightbox === 'function');
                 
                 // Get custom label from video data attribute or default
                 const customLabel = video.dataset.label || `Project Video ${index + 1}`;
@@ -523,7 +533,9 @@ function initializeVideoClickHandlers() {
                         </text>
                     </svg>
                 `);
-                if (typeof openLightbox === 'function') {
+                if (typeof window.openLightbox === 'function') {
+                    window.openLightbox(placeholderSrc, `Video Spot ${index + 1}`, 'image');
+                } else if (typeof openLightbox === 'function') {
                     openLightbox(placeholderSrc, `Video Spot ${index + 1}`, 'image');
                 }
             }

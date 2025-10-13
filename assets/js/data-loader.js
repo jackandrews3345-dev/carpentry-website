@@ -646,16 +646,23 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
         
         if (adminVideo) {
             console.log(`📹 Loading admin video for spot ${i}`);
+            
+            // Load custom labels
+            const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+            const customLabel = videoLabels[`spot${i}`] || `Project Video ${i}`;
+            
             // Replace placeholder with video element
             const videoElement = document.createElement('video');
             videoElement.src = adminVideo;
             videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer;';
             videoElement.muted = true;
             videoElement.preload = 'metadata';
+            videoElement.setAttribute('data-label', customLabel);
             
             // Create video container with play overlay
             const videoContainer = document.createElement('div');
             videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px;';
+            videoContainer.setAttribute('data-video-processed', 'true');
             
             const playOverlay = document.createElement('div');
             playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
@@ -663,7 +670,7 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             
             const videoTitle = document.createElement('div');
             videoTitle.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);';
-            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>`;
+            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">${customLabel}</h4>`;
             
             videoContainer.appendChild(videoElement);
             videoContainer.appendChild(playOverlay);
@@ -674,11 +681,13 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             placeholder.appendChild(videoContainer);
             
             // Add click handlers for fullscreen video playback using lightbox
-            const openFullscreenVideo = () => {
-                console.log(`🎬 Opening video ${i} in fullscreen lightbox`);
+            const openFullscreenVideo = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log(`🎬 Opening video ${i} (${customLabel}) in fullscreen lightbox`);
                 // Use the existing lightbox system for fullscreen video
-                if (typeof openLightbox === 'function') {
-                    openLightbox(adminVideo, `Project Video ${i}`, 'video');
+                if (typeof window.openLightbox === 'function') {
+                    window.openLightbox(adminVideo, customLabel, 'video');
                 } else {
                     console.log('Lightbox not available, falling back to inline play');
                     // Fallback to inline video if lightbox not available
@@ -694,8 +703,8 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
                 }
             };
             
-            videoElement.onclick = openFullscreenVideo;
-            playOverlay.onclick = openFullscreenVideo;
+            videoContainer.addEventListener('click', openFullscreenVideo);
+            playOverlay.addEventListener('click', openFullscreenVideo);
             
             // Note: Video now opens in fullscreen lightbox instead of inline controls
             
@@ -740,12 +749,8 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
     videoGalleryUpdating = false;
     console.log('📹 Video gallery update complete');
     
-    // Reinitialize video click handlers after gallery update
-    if (typeof window.reinitializeVideoClickHandlers === 'function') {
-        setTimeout(() => {
-            window.reinitializeVideoClickHandlers();
-        }, 100);
-    }
+    // Video click handlers are now managed by the data-loader itself
+    // No need to reinitialize script.js handlers as they detect processed videos
 }
 
 // Update hero section video
@@ -1451,7 +1456,9 @@ function forceImmediateVideoUpdate() {
     console.log('🚀 Force immediate video update...');
     
     const adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
     console.log('Admin videos found:', adminVideos);
+    console.log('Video labels found:', videoLabels);
     
     if (Object.keys(adminVideos).length === 0) {
         console.log('No admin videos found, skipping immediate update');
@@ -1466,15 +1473,20 @@ function forceImmediateVideoUpdate() {
         if (videoItem && adminVideo) {
             console.log(`🎬 Direct replacing video spot ${i}`);
             
+            // Get custom label or use default
+            const customLabel = videoLabels[`spot${i}`] || `Project Video ${i}`;
+            
             // Create direct video replacement
             const videoContainer = document.createElement('div');
             videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px; cursor: pointer;';
+            videoContainer.setAttribute('data-video-processed', 'true'); // Mark as processed by data-loader
             
             const videoElement = document.createElement('video');
             videoElement.src = adminVideo;
             videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px;';
             videoElement.muted = true;
             videoElement.preload = 'metadata';
+            videoElement.setAttribute('data-label', customLabel); // Store custom label
             
             const playOverlay = document.createElement('div');
             playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
@@ -1482,17 +1494,19 @@ function forceImmediateVideoUpdate() {
             
             const videoTitle = document.createElement('div');
             videoTitle.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);';
-            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>`;
+            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">${customLabel}</h4>`;
             
             videoContainer.appendChild(videoElement);
             videoContainer.appendChild(playOverlay);
             videoContainer.appendChild(videoTitle);
             
             // Add click event listener
-            const openVideoLightbox = () => {
-                console.log(`Opening video ${i} in lightbox`);
+            const openVideoLightbox = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log(`Opening video ${i} (${customLabel}) in lightbox`);
                 if (typeof window.openLightbox === 'function') {
-                    window.openLightbox(adminVideo, `Project Video ${i}`, 'video');
+                    window.openLightbox(adminVideo, customLabel, 'video');
                 } else {
                     console.error('openLightbox function not available');
                     // Fallback - try to play inline
@@ -1609,13 +1623,7 @@ function forceImmediateVideoUpdate() {
     
     console.log('🚀 Immediate video update complete');
     
-    // Reinitialize video click handlers after updating videos
-    if (typeof window.reinitializeVideoClickHandlers === 'function') {
-        setTimeout(() => {
-            window.reinitializeVideoClickHandlers();
-            console.log('🔄 Video click handlers reinitialized');
-        }, 200);
-    }
+    // Video click handlers are managed by data-loader, no need to reinitialize
 }
 
 // Load all labels from Firebase on startup
@@ -1651,6 +1659,47 @@ async function loadLabelsFromFirebase() {
         console.error('Error loading labels from Firebase:', error);
     }
 }
+
+// Debugging functions for videos
+window.checkVideos = function() {
+    console.log('🔍 Video Debug Information:');
+    
+    const adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+    const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+    
+    console.log('📼 Admin Videos:', adminVideos);
+    console.log('🏷️ Video Labels:', videoLabels);
+    
+    const videoItems = document.querySelectorAll('.video-item');
+    console.log(`🎬 Found ${videoItems.length} video items on page`);
+    
+    videoItems.forEach((item, index) => {
+        const placeholder = item.querySelector('.video-placeholder');
+        const processedContainer = item.querySelector('[data-video-processed="true"]');
+        const video = item.querySelector('video');
+        
+        console.log(`Video ${index + 1}:`);
+        console.log('  - Has placeholder:', !!placeholder);
+        console.log('  - Processed by data-loader:', !!processedContainer);
+        console.log('  - Has video element:', !!video);
+        if (video) {
+            console.log('  - Video src:', video.src);
+            console.log('  - Video label:', video.dataset.label);
+        }
+    });
+};
+
+window.forceVideoSync = function() {
+    console.log('🔄 Force syncing videos from Firebase...');
+    loadLabelsFromFirebase().then(() => {
+        forceImmediateVideoUpdate();
+    });
+};
+
+window.refreshVideos = function() {
+    console.log('🔄 Refreshing all videos...');
+    forceImmediateVideoUpdate();
+};
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
