@@ -1705,12 +1705,16 @@ window.refreshVideos = function() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         updatePageContent();
+        // Process videos immediately
+        forceImmediateVideoUpdate();
         // Load labels from Firebase
         setTimeout(loadLabelsFromFirebase, 1500);
         // Load featured video from Firebase
         setTimeout(loadFeaturedVideoFromFirebase, 1200);
-        // Force immediate video update
-        setTimeout(forceImmediateVideoUpdate, 1000);
+        // Force immediate video update - run very early
+        setTimeout(forceImmediateVideoUpdate, 100);
+        // Run again to ensure it worked
+        setTimeout(forceImmediateVideoUpdate, 800);
         // Also try to refresh profile photo immediately
         setTimeout(refreshProfilePhoto, 500);
         // Start checking for updates
@@ -1718,12 +1722,16 @@ if (document.readyState === 'loading') {
     });
 } else {
     updatePageContent();
+    // Process videos immediately
+    forceImmediateVideoUpdate();
     // Load labels from Firebase
     setTimeout(loadLabelsFromFirebase, 1500);
     // Load featured video from Firebase
     setTimeout(loadFeaturedVideoFromFirebase, 1200);
-    // Force immediate video update
-    setTimeout(forceImmediateVideoUpdate, 1000);
+    // Force immediate video update - run very early
+    setTimeout(forceImmediateVideoUpdate, 100);
+    // Run again to ensure it worked
+    setTimeout(forceImmediateVideoUpdate, 800);
     // Also try to refresh profile photo immediately
     setTimeout(refreshProfilePhoto, 500);
     // Start checking for updates

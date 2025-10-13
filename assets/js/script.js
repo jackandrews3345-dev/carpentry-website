@@ -451,10 +451,8 @@ function initializeLightbox() {
             });
         });
         
-        // Initialize video click handlers as well
-        setTimeout(() => {
-            initializeVideoClickHandlers();
-        }, 100);
+        // Video click handlers are managed by data-loader.js
+        // initializeVideoClickHandlers() only called manually if needed
         
         console.log('Lightbox initialization complete!');
     }, 500); // Small delay to ensure DOM is ready
@@ -470,7 +468,10 @@ function initializeVideoClickHandlers() {
     videoItems.forEach((item, index) => {
         // Check if this video has already been processed by data-loader
         const processedContainer = item.querySelector('[data-video-processed="true"]');
-        if (processedContainer) {
+        const hasVideo = item.querySelector('video');
+        const hasCustomTitle = item.querySelector('h4');
+        
+        if (processedContainer || (hasVideo && hasCustomTitle)) {
             console.log(`Video ${index + 1} already processed by data-loader, skipping script.js handlers`);
             return; // Skip this video, data-loader handles it
         }
