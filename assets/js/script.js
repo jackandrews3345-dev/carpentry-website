@@ -451,8 +451,10 @@ function initializeLightbox() {
             });
         });
         
-        // Video click handlers are managed by data-loader.js
-        // initializeVideoClickHandlers() only called manually if needed
+        // Initialize video click handlers as well
+        setTimeout(() => {
+            initializeVideoClickHandlers();
+        }, 200);
         
         console.log('Lightbox initialization complete!');
     }, 500); // Small delay to ensure DOM is ready
@@ -466,23 +468,10 @@ function initializeVideoClickHandlers() {
     console.log('Found', videoItems.length, 'video items');
     
     videoItems.forEach((item, index) => {
-        // Check if this video has already been processed by data-loader
-        const processedContainer = item.querySelector('[data-video-processed="true"]');
-        const hasVideo = item.querySelector('video');
-        const hasCustomTitle = item.querySelector('h4');
-        
-        if (processedContainer || (hasVideo && hasCustomTitle)) {
-            console.log(`Video ${index + 1} already processed by data-loader, skipping script.js handlers`);
-            return; // Skip this video, data-loader handles it
-        }
-        
-        // Only handle videos that haven't been processed by data-loader
-        console.log(`Setting up script.js handlers for video ${index + 1}`);
-        
-        // Add cursor pointer
+        // Make sure the item is clickable
         item.style.cursor = 'pointer';
         
-        // Remove any existing click events and add new one
+        // Remove any existing handlers to prevent conflicts
         const newItem = item.cloneNode(true);
         item.parentNode.replaceChild(newItem, item);
         newItem.style.cursor = 'pointer';
@@ -492,34 +481,56 @@ function initializeVideoClickHandlers() {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('Video item clicked (script.js handler):', index + 1);
+            console.log('Video item clicked:', index + 1);
             
-            // Check if there's an uploaded video
+            // Look for video element anywhere in the item
             const video = newItem.querySelector('video');
+            const videoContainer = newItem.querySelector('[style*="cursor: pointer"]');
+            
+            let videoSrc = null;
+            let videoTitle = 'Project Video';
+            
+            // Try to find video source
             if (video && video.src && !video.src.includes('placeholder')) {
-                console.log('Opening uploaded video in lightbox:', video.src);
+                videoSrc = video.src;
+                videoTitle = video.dataset.label || video.getAttribute('alt') || 'Project Video';
+            }
+            
+            // Also check in localStorage for this video spot
+            if (!videoSrc) {
+                const adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+                const adminVideoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+                const spotKey = `spot${index + 1}`;
                 
-                // Get custom label from video data attribute or default
-                const customLabel = video.dataset.label || `Project Video ${index + 1}`;
-                
+                if (adminVideos[spotKey]) {
+                    videoSrc = adminVideos[spotKey];
+                    videoTitle = adminVideoLabels[spotKey] || `Project Video ${index + 1}`;
+                }
+            }
+            
+            // Try to get custom title from the displayed title element
+            const titleElement = newItem.querySelector('h4');
+            if (titleElement && titleElement.textContent) {
+                videoTitle = titleElement.textContent;
+            }
+            
+            if (videoSrc) {
+                console.log('Opening video in lightbox:', videoSrc, 'with title:', videoTitle);
                 if (typeof window.openLightbox === 'function') {
-                    window.openLightbox(video.src, customLabel, 'video');
+                    window.openLightbox(videoSrc, videoTitle, 'video');
                 } else if (typeof openLightbox === 'function') {
-                    openLightbox(video.src, customLabel, 'video');
+                    openLightbox(videoSrc, videoTitle, 'video');
                 } else {
-                    console.error('Lightbox not available - trying fallback');
-                    // Fallback - play video inline
-                    if (video.paused) {
-                        video.play();
+                    console.error('Lightbox not available');
+                    // Try direct video play as fallback
+                    if (video) {
                         video.controls = true;
-                    } else {
-                        video.pause();
-                        video.controls = false;
+                        video.play().catch(err => console.log('Video play failed:', err));
                     }
                 }
             } else {
-                // Show placeholder video message
-                console.log('No uploaded video, showing placeholder message');
+                // No video found, show placeholder
+                console.log('No video found, showing placeholder');
                 const placeholderSrc = 'data:image/svg+xml;base64,' + btoa(`
                     <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
                         <rect width="100%" height="100%" fill="#007acc"/>

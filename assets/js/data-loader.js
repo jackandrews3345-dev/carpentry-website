@@ -662,7 +662,6 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             // Create video container with play overlay
             const videoContainer = document.createElement('div');
             videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px;';
-            videoContainer.setAttribute('data-video-processed', 'true');
             
             const playOverlay = document.createElement('div');
             playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
@@ -680,31 +679,7 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             placeholder.innerHTML = '';
             placeholder.appendChild(videoContainer);
             
-            // Add click handlers for fullscreen video playback using lightbox
-            const openFullscreenVideo = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log(`🎬 Opening video ${i} (${customLabel}) in fullscreen lightbox`);
-                // Use the existing lightbox system for fullscreen video
-                if (typeof window.openLightbox === 'function') {
-                    window.openLightbox(adminVideo, customLabel, 'video');
-                } else {
-                    console.log('Lightbox not available, falling back to inline play');
-                    // Fallback to inline video if lightbox not available
-                    if (videoElement.paused) {
-                        videoElement.play();
-                        playOverlay.style.display = 'none';
-                        videoElement.controls = true;
-                    } else {
-                        videoElement.pause();
-                        playOverlay.style.display = 'block';
-                        videoElement.controls = false;
-                    }
-                }
-            };
-            
-            videoContainer.addEventListener('click', openFullscreenVideo);
-            playOverlay.addEventListener('click', openFullscreenVideo);
+            // Let script.js handle all video clicks uniformly
             
             // Note: Video now opens in fullscreen lightbox instead of inline controls
             
@@ -1479,7 +1454,6 @@ function forceImmediateVideoUpdate() {
             // Create direct video replacement
             const videoContainer = document.createElement('div');
             videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px; cursor: pointer;';
-            videoContainer.setAttribute('data-video-processed', 'true'); // Mark as processed by data-loader
             
             const videoElement = document.createElement('video');
             videoElement.src = adminVideo;
@@ -1500,25 +1474,7 @@ function forceImmediateVideoUpdate() {
             videoContainer.appendChild(playOverlay);
             videoContainer.appendChild(videoTitle);
             
-            // Add click event listener
-            const openVideoLightbox = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log(`Opening video ${i} (${customLabel}) in lightbox`);
-                if (typeof window.openLightbox === 'function') {
-                    window.openLightbox(adminVideo, customLabel, 'video');
-                } else {
-                    console.error('openLightbox function not available');
-                    // Fallback - try to play inline
-                    if (videoElement.paused) {
-                        videoElement.play();
-                        videoElement.controls = true;
-                    }
-                }
-            };
-            
-            videoContainer.addEventListener('click', openVideoLightbox);
-            playOverlay.addEventListener('click', openVideoLightbox);
+            // Don't add click handlers here - let script.js handle all video clicks uniformly
             
             // Replace the content
             videoItem.innerHTML = '';
