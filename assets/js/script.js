@@ -20,26 +20,44 @@ function loadGalleryImages() {
     const customData = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
     const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
     
-    // Update furniture images (spots 1-2)
-    for (let i = 1; i <= 2; i++) {
-        const spotElement = document.getElementById(`gallery-spot-${i}`);
-        if (spotElement && furnitureData[`spot${i}`]) {
+    // Load custom labels
+    const furnitureLabels = JSON.parse(localStorage.getItem('gallery_furniture_labels') || '{}');
+    const renovationLabels = JSON.parse(localStorage.getItem('gallery_renovation_labels') || '{}');
+    const customLabels = JSON.parse(localStorage.getItem('gallery_custom_labels') || '{}');
+    
+    console.log('Loading gallery images with data:', { furnitureData, renovationData, customData });
+    console.log('Loading labels:', { furnitureLabels, renovationLabels, customLabels });
+    
+    // Map gallery spots correctly based on HTML data-category:
+    // Spot 1 & 4: furniture
+    // Spot 2 & 5: renovation  
+    // Spot 3 & 6: custom
+    
+    // Update furniture images (spots 1, 4)
+    const furnitureSpots = [1, 4];
+    furnitureSpots.forEach((spot, index) => {
+        const spotElement = document.getElementById(`gallery-spot-${spot}`);
+        if (spotElement && furnitureData[`spot${index + 1}`]) {
+            const customLabel = furnitureLabels[`spot${index + 1}`] || `Custom Furniture ${index + 1}`;
+            console.log(`Loading furniture image for spot ${spot}:`, customLabel);
             spotElement.innerHTML = `
-                <img src="${furnitureData[`spot${i}`]}" alt="Custom Furniture ${i}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <img src="${furnitureData[`spot${index + 1}`]}" alt="${customLabel}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
                 <div class="gallery-overlay">
                     <i class="fas fa-expand"></i>
                 </div>
             `;
         }
-    }
+    });
     
     // Update renovation images (spots 2, 5)
     const renovationSpots = [2, 5];
     renovationSpots.forEach((spot, index) => {
         const spotElement = document.getElementById(`gallery-spot-${spot}`);
         if (spotElement && renovationData[`spot${index + 1}`]) {
+            const customLabel = renovationLabels[`spot${index + 1}`] || `Renovation ${index + 1}`;
+            console.log(`Loading renovation image for spot ${spot}:`, customLabel);
             spotElement.innerHTML = `
-                <img src="${renovationData[`spot${index + 1}`]}" alt="Renovation ${index + 1}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <img src="${renovationData[`spot${index + 1}`]}" alt="${customLabel}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
                 <div class="gallery-overlay">
                     <i class="fas fa-expand"></i>
                 </div>
@@ -52,8 +70,10 @@ function loadGalleryImages() {
     customSpots.forEach((spot, index) => {
         const spotElement = document.getElementById(`gallery-spot-${spot}`);
         if (spotElement && customData[`spot${index + 1}`]) {
+            const customLabel = customLabels[`spot${index + 1}`] || `Custom Work ${index + 1}`;
+            console.log(`Loading custom work image for spot ${spot}:`, customLabel);
             spotElement.innerHTML = `
-                <img src="${customData[`spot${index + 1}`]}" alt="Custom Work ${index + 1}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
+                <img src="${customData[`spot${index + 1}`]}" alt="${customLabel}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
                 <div class="gallery-overlay">
                     <i class="fas fa-expand"></i>
                 </div>
@@ -67,11 +87,19 @@ function loadGalleryImages() {
 
 function loadGalleryVideos(videoData) {
     const videoItems = document.querySelectorAll('.video-item');
+    const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
     
     videoItems.forEach((item, index) => {
         if (videoData[`spot${index + 1}`]) {
+            const customLabel = videoLabels[`spot${index + 1}`] || `Project Video ${index + 1}`;
+            const video = document.createElement('video');
+            video.src = videoData[`spot${index + 1}`];
+            video.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px;';
+            video.muted = true;
+            video.dataset.label = customLabel; // Store label for video click handler
+            
             item.innerHTML = `
-                <video style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted>
+                <video style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted data-label="${customLabel}">
                     <source src="${videoData[`spot${index + 1}`]}" type="video/mp4">
                 </video>
                 <div class="gallery-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s;">
@@ -329,6 +357,22 @@ function initializeLightbox() {
             lightboxImg.alt = alt || 'Gallery Image';
         }
         
+        // Add or update image title overlay
+        let titleOverlay = lightbox.querySelector('.lightbox-title');
+        if (!titleOverlay) {
+            titleOverlay = document.createElement('div');
+            titleOverlay.className = 'lightbox-title';
+            titleOverlay.style.cssText = 'position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-size: 1.1rem; text-align: center; max-width: 80%; z-index: 2002;';
+            lightbox.appendChild(titleOverlay);
+        }
+        
+        if (alt && alt !== 'Gallery Image' && !alt.includes('Gallery Spot')) {
+            titleOverlay.textContent = alt;
+            titleOverlay.style.display = 'block';
+        } else {
+            titleOverlay.style.display = 'none';
+        }
+        
         lightbox.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
@@ -407,14 +451,93 @@ function initializeLightbox() {
             });
         });
         
-        // Note: Video click handlers are now managed by data-loader.js for admin uploaded videos
-        // This prevents conflicts between placeholder videos and actual uploaded content
-        
-        console.log('Video click handling delegated to data-loader.js for admin uploaded content');
+        // Initialize video click handlers as well
+        setTimeout(() => {
+            initializeVideoClickHandlers();
+        }, 100);
         
         console.log('Lightbox initialization complete!');
     }, 500); // Small delay to ensure DOM is ready
 }
+
+// ===== VIDEO CLICK HANDLERS =====
+function initializeVideoClickHandlers() {
+    console.log('Initializing video click handlers...');
+    
+    const videoItems = document.querySelectorAll('.video-item');
+    console.log('Found', videoItems.length, 'video items');
+    
+    videoItems.forEach((item, index) => {
+        // Remove any existing click events
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
+        
+        // Add cursor pointer
+        newItem.style.cursor = 'pointer';
+        
+        // Add click event
+        newItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Video item clicked:', index + 1);
+            
+            // Check if there's an uploaded video
+            const video = newItem.querySelector('video');
+            if (video && video.src && !video.src.includes('placeholder')) {
+                console.log('Opening uploaded video in lightbox:', video.src);
+                console.log('openLightbox available?', typeof window.openLightbox === 'function');
+                
+                // Get custom label from video data attribute or default
+                const customLabel = video.dataset.label || `Project Video ${index + 1}`;
+                
+                if (typeof window.openLightbox === 'function') {
+                    window.openLightbox(video.src, customLabel, 'video');
+                } else if (typeof openLightbox === 'function') {
+                    openLightbox(video.src, customLabel, 'video');
+                } else {
+                    console.error('Lightbox not available - trying fallback');
+                    // Fallback - play video inline
+                    if (video.paused) {
+                        video.play();
+                        video.controls = true;
+                    } else {
+                        video.pause();
+                        video.controls = false;
+                    }
+                }
+            } else {
+                // Show placeholder video message
+                console.log('No uploaded video, showing placeholder message');
+                const placeholderSrc = 'data:image/svg+xml;base64,' + btoa(`
+                    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100%" height="100%" fill="#007acc"/>
+                        <text x="50%" y="40%" font-family="Arial" font-size="32" fill="white" text-anchor="middle" dominant-baseline="middle">
+                            Video Spot ${index + 1}
+                        </text>
+                        <text x="50%" y="50%" font-family="Arial" font-size="18" fill="white" text-anchor="middle" dominant-baseline="middle">
+                            Upload your project videos
+                        </text>
+                        <text x="50%" y="60%" font-family="Arial" font-size="18" fill="white" text-anchor="middle" dominant-baseline="middle">
+                            in the admin panel!
+                        </text>
+                    </svg>
+                `);
+                if (typeof openLightbox === 'function') {
+                    openLightbox(placeholderSrc, `Video Spot ${index + 1}`, 'image');
+                }
+            }
+        });
+    });
+    
+    console.log('Video click handlers initialized!');
+}
+
+// Global function to reinitialize video click handlers
+window.reinitializeVideoClickHandlers = function() {
+    console.log('🔄 Reinitializing video click handlers...');
+    initializeVideoClickHandlers();
+};
 
 // ===== CONTACT FORM HANDLING =====
 function initializeContactForm() {
@@ -1146,6 +1269,80 @@ function loadVideosFromAdmin() {
     }
 }
 
+// Load featured video for hero section
+function loadFeaturedVideoFromAdmin() {
+    console.log('Loading featured video from admin panel...');
+    
+    const featuredVideo = localStorage.getItem('casa_featured_video');
+    const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
+    
+    if (featuredVideo && heroVideoContainer) {
+        console.log('Featured video found, updating hero section');
+        
+        // Create video container with proper sizing constraints
+        const videoContainer = document.createElement('div');
+        videoContainer.style.cssText = 'position: relative; width: 400px; height: 250px; border-radius: 16px; overflow: hidden; cursor: pointer; margin: 0 auto;';
+        
+        const videoElement = document.createElement('video');
+        videoElement.src = featuredVideo;
+        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px;';
+        videoElement.muted = true;
+        videoElement.preload = 'metadata';
+        videoElement.autoplay = false;
+        videoElement.loop = false;
+        
+        const playOverlay = document.createElement('div');
+        playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;';
+        playOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+        
+        const videoTitle = document.createElement('div');
+        videoTitle.style.cssText = 'position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center; pointer-events: none;';
+        videoTitle.innerHTML = '<p style="margin: 0; font-size: 1.2rem; font-weight: 500;">Featured Work Video</p>';
+        
+        videoContainer.appendChild(videoElement);
+        videoContainer.appendChild(playOverlay);
+        videoContainer.appendChild(videoTitle);
+        
+        // Replace placeholder with video container
+        heroVideoContainer.innerHTML = '';
+        heroVideoContainer.appendChild(videoContainer);
+        
+        // Add click handler for fullscreen playback
+        const clickHandler = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Featured video clicked, opening in lightbox');
+            console.log('openLightbox available?', typeof window.openLightbox === 'function');
+            if (typeof window.openLightbox === 'function') {
+                window.openLightbox(featuredVideo, 'Featured Work Video', 'video');
+            } else if (typeof openLightbox === 'function') {
+                openLightbox(featuredVideo, 'Featured Work Video', 'video');
+            } else {
+                console.error('Lightbox function not available - trying fallback');
+                // Fallback - open video inline
+                if (videoElement.paused) {
+                    videoElement.play();
+                    videoElement.controls = true;
+                    playOverlay.style.display = 'none';
+                } else {
+                    videoElement.pause();
+                    videoElement.controls = false;
+                    playOverlay.style.display = 'block';
+                }
+            }
+        };
+        
+        videoContainer.addEventListener('click', clickHandler);
+        
+        // Also add click handler to play overlay for better UX
+        playOverlay.addEventListener('click', clickHandler);
+        
+        console.log('Featured video loaded successfully');
+    } else {
+        console.log('No featured video found or hero container missing');
+    }
+}
+
 // Replace map placeholder with interactive Bahamas map
 function loadInteractiveMap() {
     const mapPlaceholder = document.querySelector('.location-map .map-placeholder');
@@ -1298,6 +1495,103 @@ window.addEventListener('click', (e) => {
     }
 });
 
+// ===== VIDEO REINITIALIZATION =====
+// Function to reinitialize video click handlers after dynamic content loads
+function reinitializeVideoClickHandlers() {
+    console.log('Reinitializing video click handlers...');
+    
+    // Reinitialize gallery video handlers
+    setTimeout(() => {
+        initializeVideoClickHandlers();
+    }, 100);
+    
+    // Reinitialize featured video if it exists
+    setTimeout(() => {
+        const featuredVideoContainer = document.querySelector('.hero-video video');
+        if (featuredVideoContainer && !featuredVideoContainer.dataset.handlerAdded) {
+            const clickHandler = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Reinit: Featured video clicked');
+                if (typeof window.openLightbox === 'function') {
+                    const featuredVideo = localStorage.getItem('casa_featured_video');
+                    if (featuredVideo) {
+                        window.openLightbox(featuredVideo, 'Featured Work Video', 'video');
+                    }
+                }
+            };
+            
+            featuredVideoContainer.addEventListener('click', clickHandler);
+            featuredVideoContainer.dataset.handlerAdded = 'true';
+            console.log('Featured video click handler reinitialized');
+        }
+    }, 500);
+}
+
+// Make function globally available for data-loader.js to call
+window.reinitializeVideoClickHandlers = reinitializeVideoClickHandlers;
+
+// ===== VIDEO REINITIALIZATION =====
+// Function to reinitialize video click handlers after dynamic content loads
+function reinitializeVideoClickHandlers() {
+    console.log('Reinitializing video click handlers...');
+    
+    // Reinitialize gallery video handlers
+    setTimeout(() => {
+        initializeVideoClickHandlers();
+    }, 100);
+    
+    // Reinitialize featured video if it exists
+    setTimeout(() => {
+        const featuredVideoContainer = document.querySelector('.hero-video video');
+        if (featuredVideoContainer && !featuredVideoContainer.dataset.handlerAdded) {
+            const clickHandler = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Reinit: Featured video clicked');
+                if (typeof window.openLightbox === 'function') {
+                    const featuredVideo = localStorage.getItem('casa_featured_video');
+                    if (featuredVideo) {
+                        window.openLightbox(featuredVideo, 'Featured Work Video', 'video');
+                    }
+                }
+            };
+            
+            featuredVideoContainer.addEventListener('click', clickHandler);
+            featuredVideoContainer.dataset.handlerAdded = 'true';
+            console.log('Featured video click handler reinitialized');
+        }
+    }, 500);
+}
+
+// Make function globally available for data-loader.js to call
+window.reinitializeVideoClickHandlers = reinitializeVideoClickHandlers;
+
+// ===== ACCESSIBILITY INITIALIZATION =====
+function initializeAccessibility() {
+    console.log('Initializing accessibility features...');
+    
+    // Add ARIA labels and keyboard navigation support
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    const videoItems = document.querySelectorAll('.video-item');
+    const allInteractiveItems = [...galleryItems, ...videoItems];
+    
+    allInteractiveItems.forEach((item, index) => {
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('role', 'button');
+        
+        // Add keyboard navigation
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+    
+    console.log('Accessibility features initialized');
+}
+
 // Console welcome message
 console.log('%c🔨 Casa Madera Website', 'color: #007acc; font-size: 20px; font-weight: bold;');
 console.log('%cWebsite loaded successfully! Ready to showcase your carpentry work.', 'color: #28a745; font-size: 14px;');
@@ -1327,7 +1621,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeStarRating();
     handleReviewSubmission();
     loadSavedReviews();
-    loadVideosFromAdmin();
+    
+    // Load videos after a short delay to ensure lightbox is ready
+    setTimeout(() => {
+        loadVideosFromAdmin();
+        loadFeaturedVideoFromAdmin(); // Load featured video for hero section
+        console.log('Videos loaded with lightbox ready');
+    }, 1000);
+    
     loadInteractiveMap();
     
     // Initialize accessibility features

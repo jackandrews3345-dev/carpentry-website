@@ -739,6 +739,13 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
     // Reset the updating flag
     videoGalleryUpdating = false;
     console.log('📹 Video gallery update complete');
+    
+    // Reinitialize video click handlers after gallery update
+    if (typeof window.reinitializeVideoClickHandlers === 'function') {
+        setTimeout(() => {
+            window.reinitializeVideoClickHandlers();
+        }, 100);
+    }
 }
 
 // Update hero section video
@@ -754,20 +761,17 @@ function updateHeroVideo(skipFirebaseLoad = false) {
     console.log('🎬 Updating hero section video...');
     heroVideoUpdating = true;
     
-    // Load admin panel videos from localStorage
-    let adminVideos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
-    
-    // Try to load from Firebase if available (only on initial load)
+    // Try to load featured video from Firebase if available (only on initial load)
     if (!skipFirebaseLoad && window.firebaseManager && window.firebaseManager.isFirebaseReady) {
-        window.firebaseManager.loadData('gallery_videos').then(firebaseVideos => {
-            if (firebaseVideos && typeof firebaseVideos === 'object') {
-                console.log('🎬 Loading hero videos from Firebase:', firebaseVideos);
-                const combinedVideos = { ...adminVideos, ...firebaseVideos };
-                // Only update if data actually changed
-                const currentData = JSON.stringify(adminVideos);
-                const newData = JSON.stringify(combinedVideos);
-                if (currentData !== newData) {
-                    localStorage.setItem('gallery_videos', newData);
+        // Only load featured video from Firebase (completely independent from gallery videos)
+        window.firebaseManager.loadData('casa_featured_video').then(firebaseFeaturedVideo => {
+            // Update featured video if available
+            if (firebaseFeaturedVideo) {
+                const currentFeatured = localStorage.getItem('casa_featured_video');
+                if (currentFeatured !== firebaseFeaturedVideo) {
+                    localStorage.setItem('casa_featured_video', firebaseFeaturedVideo);
+                    localStorage.setItem('casa_featured_video_updated', Date.now().toString());
+                    console.log('🎬 Loading featured video from Firebase');
                     // Trigger update with Firebase data but skip Firebase loading
                     setTimeout(() => {
                         heroVideoUpdating = false;
@@ -776,9 +780,10 @@ function updateHeroVideo(skipFirebaseLoad = false) {
                     return;
                 }
             }
+            
             heroVideoUpdating = false;
         }).catch(error => {
-            console.log('⚠️ Could not load hero videos from Firebase:', error);
+            console.log('⚠️ Could not load featured video from Firebase:', error);
             heroVideoUpdating = false;
         });
         return; // Exit early, will resume in Firebase callback
@@ -792,22 +797,25 @@ function updateHeroVideo(skipFirebaseLoad = false) {
         return;
     }
     
-    // Check if we have a featured video (use spot1 as hero video)
-    const heroVideo = adminVideos['spot1'];
+    // Check if we have a dedicated featured video (completely independent from gallery videos)
+    const featuredVideo = localStorage.getItem('casa_featured_video');
+    const heroVideo = featuredVideo; // No fallback - featured video is completely separate
     
     if (heroVideo) {
-        console.log('🎬 Loading hero video from admin panel');
+        console.log('🎬 Loading featured video for hero section');
+        
+        // Create video container with fixed sizing to prevent background coverage
+        const videoContainer = document.createElement('div');
+        videoContainer.style.cssText = 'position: relative; width: 400px; height: 250px; margin: 0 auto; border-radius: 16px; overflow: hidden;';
         
         // Create video element
         const videoElement = document.createElement('video');
         videoElement.src = heroVideo;
-        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer;';
+        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px; cursor: pointer;';
         videoElement.muted = true;
         videoElement.preload = 'metadata';
-        
-        // Create video container with play overlay
-        const videoContainer = document.createElement('div');
-        videoContainer.style.cssText = 'position: relative; width: 100%; height: 100%;';
+        videoElement.autoplay = false;
+        videoElement.loop = false;
         
         const playOverlay = document.createElement('div');
         playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
@@ -851,13 +859,18 @@ function updateHeroVideo(skipFirebaseLoad = false) {
         
         // Note: Hero video now opens in fullscreen lightbox instead of inline controls
     } else {
-        console.log('No hero video found in admin panel');
+        console.log('No featured video uploaded - hero section will show placeholder');
         // Keep original placeholder styling
     }
     
-    // Reset the updating flag
+    // Reset the updating flag - this prevents recursive calls and video flickering
     heroVideoUpdating = false;
     console.log('🎬 Hero video update complete');
+    
+    // Additional safety reset after a small delay to prevent Firebase load cycles
+    setTimeout(() => {
+        heroVideoUpdating = false;
+    }, 100);
 }
 
 // Open video modal (you'll need to implement this)
@@ -1415,6 +1428,24 @@ async function loadProfileFromFirebase() {
     }
 }
 
+// Load featured video from Firebase
+async function loadFeaturedVideoFromFirebase() {
+    if (!window.firebaseManager || !window.firebaseManager.isFirebaseReady) {
+        console.log('Firebase not ready, skipping featured video loading');
+        return;
+    }
+    
+    try {
+        const featuredVideo = await window.firebaseManager.loadData('casa_featured_video');
+        if (featuredVideo) {
+            localStorage.setItem('casa_featured_video', featuredVideo);
+            console.log('✅ Featured video loaded from Firebase');
+        }
+    } catch (error) {
+        console.log('⚠️ Could not load featured video from Firebase:', error);
+    }
+}
+
 // Force immediate video update on page load
 function forceImmediateVideoUpdate() {
     console.log('🚀 Force immediate video update...');
@@ -1436,46 +1467,199 @@ function forceImmediateVideoUpdate() {
             console.log(`🎬 Direct replacing video spot ${i}`);
             
             // Create direct video replacement
-            videoItem.innerHTML = `
-                <div style="position: relative; width: 100%; height: 200px; cursor: pointer;" onclick="window.openLightbox('${adminVideo}', 'Project Video ${i}', 'video')">
-                    <video src="${adminVideo}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted preload="metadata"></video>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;">
-                        <i class="fas fa-play-circle"></i>
-                    </div>
-                    <div style="position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
-                        <h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>
-                    </div>
-                </div>
-            `;
+            const videoContainer = document.createElement('div');
+            videoContainer.style.cssText = 'position: relative; width: 100%; height: 200px; cursor: pointer;';
+            
+            const videoElement = document.createElement('video');
+            videoElement.src = adminVideo;
+            videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px;';
+            videoElement.muted = true;
+            videoElement.preload = 'metadata';
+            
+            const playOverlay = document.createElement('div');
+            playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
+            playOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+            
+            const videoTitle = document.createElement('div');
+            videoTitle.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);';
+            videoTitle.innerHTML = `<h4 style="margin: 0; font-size: 1.1rem;">Project Video ${i}</h4>`;
+            
+            videoContainer.appendChild(videoElement);
+            videoContainer.appendChild(playOverlay);
+            videoContainer.appendChild(videoTitle);
+            
+            // Add click event listener
+            const openVideoLightbox = () => {
+                console.log(`Opening video ${i} in lightbox`);
+                if (typeof window.openLightbox === 'function') {
+                    window.openLightbox(adminVideo, `Project Video ${i}`, 'video');
+                } else {
+                    console.error('openLightbox function not available');
+                    // Fallback - try to play inline
+                    if (videoElement.paused) {
+                        videoElement.play();
+                        videoElement.controls = true;
+                    }
+                }
+            };
+            
+            videoContainer.addEventListener('click', openVideoLightbox);
+            playOverlay.addEventListener('click', openVideoLightbox);
+            
+            // Replace the content
+            videoItem.innerHTML = '';
+            videoItem.appendChild(videoContainer);
         }
     }
     
-    // Also update hero video
+    // Update hero video with dedicated featured video
     const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
-    const heroVideo = adminVideos['spot1'];
+    const featuredVideo = localStorage.getItem('casa_featured_video');
     
-    if (heroVideoContainer && heroVideo) {
-        console.log('🎬 Direct replacing hero video');
-        heroVideoContainer.innerHTML = `
-            <div style="position: relative; width: 100%; height: 100%; cursor: pointer;" onclick="window.openLightbox('${heroVideo}', 'Featured Work Video', 'video')">
-                <video src="${heroVideo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" muted preload="metadata"></video>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;">
-                    <i class="fas fa-play-circle"></i>
-                </div>
-                <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;">
-                    <p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>
-                </div>
-            </div>
-        `;
+    if (heroVideoContainer && featuredVideo) {
+        console.log('🎬 Direct replacing hero video with featured video');
+        // Create hero video elements
+        const heroContainer = document.createElement('div');
+        heroContainer.style.cssText = 'position: relative; width: 100%; height: 100%; cursor: pointer; z-index: 1;';
+        
+        const heroVideoElement = document.createElement('video');
+        heroVideoElement.src = featuredVideo;
+        heroVideoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px;';
+        heroVideoElement.muted = true;
+        heroVideoElement.preload = 'metadata';
+        
+        const heroPlayOverlay = document.createElement('div');
+        heroPlayOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 2;';
+        heroPlayOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+        
+        const heroVideoTitle = document.createElement('div');
+        heroVideoTitle.style.cssText = 'position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;';
+        heroVideoTitle.innerHTML = '<p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>';
+        
+        heroContainer.appendChild(heroVideoElement);
+        heroContainer.appendChild(heroPlayOverlay);
+        heroContainer.appendChild(heroVideoTitle);
+        
+        // Add click event listener
+        const openHeroVideoLightbox = () => {
+            console.log('Opening hero video in lightbox');
+            if (typeof window.openLightbox === 'function') {
+                window.openLightbox(featuredVideo, 'Featured Work Video', 'video');
+            } else {
+                console.error('openLightbox function not available');
+                // Fallback - try to play inline
+                if (heroVideoElement.paused) {
+                    heroVideoElement.play();
+                    heroVideoElement.controls = true;
+                }
+            }
+        };
+        
+        heroContainer.addEventListener('click', openHeroVideoLightbox);
+        heroPlayOverlay.addEventListener('click', openHeroVideoLightbox);
+        
+        // Replace the content
+        heroVideoContainer.innerHTML = '';
+        heroVideoContainer.appendChild(heroContainer);
+    } else if (heroVideoContainer && adminVideos['spot1']) {
+        // Fallback to gallery video if no featured video is available
+        console.log('🎬 No featured video found, using gallery video as fallback');
+        const heroVideo = adminVideos['spot1'];
+        
+        const heroContainer = document.createElement('div');
+        heroContainer.style.cssText = 'position: relative; width: 100%; height: 100%; cursor: pointer; z-index: 1;';
+        
+        const heroVideoElement = document.createElement('video');
+        heroVideoElement.src = heroVideo;
+        heroVideoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px;';
+        heroVideoElement.muted = true;
+        heroVideoElement.preload = 'metadata';
+        
+        const heroPlayOverlay = document.createElement('div');
+        heroPlayOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 2;';
+        heroPlayOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
+        
+        const heroVideoTitle = document.createElement('div');
+        heroVideoTitle.style.cssText = 'position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;';
+        heroVideoTitle.innerHTML = '<p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>';
+        
+        heroContainer.appendChild(heroVideoElement);
+        heroContainer.appendChild(heroPlayOverlay);
+        heroContainer.appendChild(heroVideoTitle);
+        
+        const openHeroVideoLightbox = () => {
+            console.log('Opening hero video in lightbox');
+            if (typeof window.openLightbox === 'function') {
+                window.openLightbox(heroVideo, 'Featured Work Video', 'video');
+            } else {
+                console.error('openLightbox function not available');
+                if (heroVideoElement.paused) {
+                    heroVideoElement.play();
+                    heroVideoElement.controls = true;
+                }
+            }
+        };
+        
+        heroContainer.addEventListener('click', openHeroVideoLightbox);
+        heroPlayOverlay.addEventListener('click', openHeroVideoLightbox);
+        
+        heroVideoContainer.innerHTML = '';
+        heroVideoContainer.appendChild(heroContainer);
     }
     
     console.log('🚀 Immediate video update complete');
+    
+    // Reinitialize video click handlers after updating videos
+    if (typeof window.reinitializeVideoClickHandlers === 'function') {
+        setTimeout(() => {
+            window.reinitializeVideoClickHandlers();
+            console.log('🔄 Video click handlers reinitialized');
+        }, 200);
+    }
+}
+
+// Load all labels from Firebase on startup
+async function loadLabelsFromFirebase() {
+    if (!window.firebaseManager || !window.firebaseManager.isFirebaseReady) {
+        console.log('Firebase not ready, skipping label loading');
+        return;
+    }
+    
+    try {
+        console.log('🏷️ Loading labels from Firebase...');
+        
+        // Load all category labels
+        const categories = ['furniture', 'renovation', 'custom'];
+        for (const category of categories) {
+            const labels = await window.firebaseManager.loadData(`gallery_${category}_labels`);
+            if (labels) {
+                localStorage.setItem(`gallery_${category}_labels`, JSON.stringify(labels));
+                console.log(`✅ Loaded ${category} labels from Firebase`);
+            }
+        }
+        
+        // Load video labels
+        const videoLabels = await window.firebaseManager.loadData('gallery_videos_labels');
+        if (videoLabels) {
+            localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+            console.log('✅ Loaded video labels from Firebase');
+        }
+        
+        console.log('✅ All labels loaded from Firebase');
+        
+    } catch (error) {
+        console.error('Error loading labels from Firebase:', error);
+    }
 }
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         updatePageContent();
+        // Load labels from Firebase
+        setTimeout(loadLabelsFromFirebase, 1500);
+        // Load featured video from Firebase
+        setTimeout(loadFeaturedVideoFromFirebase, 1200);
         // Force immediate video update
         setTimeout(forceImmediateVideoUpdate, 1000);
         // Also try to refresh profile photo immediately
@@ -1485,6 +1669,10 @@ if (document.readyState === 'loading') {
     });
 } else {
     updatePageContent();
+    // Load labels from Firebase
+    setTimeout(loadLabelsFromFirebase, 1500);
+    // Load featured video from Firebase
+    setTimeout(loadFeaturedVideoFromFirebase, 1200);
     // Force immediate video update
     setTimeout(forceImmediateVideoUpdate, 1000);
     // Also try to refresh profile photo immediately

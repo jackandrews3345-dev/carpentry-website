@@ -425,6 +425,34 @@
                 <div class="success-message" id="profileSuccess">Profile photo updated successfully!</div>
             </div>
 
+            <!-- Featured Video Management -->
+            <div class="card">
+                <h3><i class="fas fa-video"></i> Featured Video (Hero Section)</h3>
+                <p style="color: #666; margin-bottom: 1rem;">Upload a featured video for the hero section of your website. This is <strong>completely separate</strong> from your project gallery videos below and showcases your absolute best work to visitors immediately when they land on your site.</p>
+                
+                <!-- Featured Video Preview -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div id="featured-video-preview" style="width: 100%; max-width: 400px; height: 225px; border: 3px solid #e1e1e1; border-radius: 8px; margin: 0 auto 1rem; background: #f8f9fa; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                        <div class="placeholder-content">
+                            <i class="fas fa-video" style="font-size: 3rem; color: #ccc;"></i>
+                            <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Upload Featured Video</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn" onclick="document.getElementById('featured-video-upload').click()" style="margin-right: 0.5rem;">
+                            <i class="fas fa-upload"></i> Upload Featured Video
+                        </button>
+                        <button class="btn btn-secondary" onclick="removeFeaturedVideo()">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    <input type="file" id="featured-video-upload" style="display: none;" accept="video/*">
+                    <p style="color: #888; font-size: 0.8rem; margin-top: 0.5rem;">Recommended: MP4 format, under 50MB. This video appears in the hero section.</p>
+                </div>
+                
+                <div class="success-message" id="featuredVideoSuccess">Featured video updated successfully!</div>
+            </div>
+
             <!-- Contact Information -->
             <div class="card">
                 <h3><i class="fas fa-address-book"></i> Contact Information</h3>
@@ -883,6 +911,7 @@
         function loadCategoryGallery(category) {
             const container = document.getElementById(`${category}Gallery`);
             const categoryData = JSON.parse(localStorage.getItem(`gallery_${category}`) || '{}');
+            const categoryLabels = JSON.parse(localStorage.getItem(`gallery_${category}_labels`) || '{}');
             
             container.innerHTML = '';
             
@@ -893,9 +922,18 @@
                 spot.id = `${category}-spot-${i}`;
                 
                 if (categoryData[`spot${i}`]) {
+                    const currentLabel = categoryLabels[`spot${i}`] || `${category.charAt(0).toUpperCase() + category.slice(1)} ${i}`;
                     spot.classList.add('has-image');
                     spot.innerHTML = `
-                        <img src="${categoryData[`spot${i}`]}" alt="${category} ${i}" class="gallery-preview">
+                        <img src="${categoryData[`spot${i}`]}" alt="${currentLabel}" class="gallery-preview">
+                        <div style="margin-top: 0.5rem;">
+                            <input type="text" 
+                                   id="${category}-label-${i}" 
+                                   value="${currentLabel}" 
+                                   placeholder="Image name/label"
+                                   style="width: 100%; padding: 0.25rem; margin-bottom: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem;"
+                                   onchange="updateImageLabel('${category}', ${i}, this.value)">
+                        </div>
                         <div>
                             <button class="gallery-btn" onclick="changeCategoryImage('${category}', ${i})">Change</button>
                             <button class="gallery-btn remove" onclick="removeCategoryImage('${category}', ${i})">Remove</button>
@@ -919,6 +957,7 @@
         function loadVideoGallery() {
             const container = document.getElementById('videosGallery');
             const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
             
             container.innerHTML = '';
             
@@ -929,6 +968,7 @@
                 spot.id = `video-spot-${i}`;
                 
                 if (videoData[`spot${i}`]) {
+                    const currentLabel = videoLabels[`spot${i}`] || `Project Video ${i}`;
                     spot.classList.add('has-image');
                     spot.innerHTML = `
                         <video class="video-preview" muted>
@@ -936,6 +976,14 @@
                         </video>
                         <div class="video-play-overlay">
                             <i class="fas fa-play"></i>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <input type="text" 
+                                   id="video-label-${i}" 
+                                   value="${currentLabel}" 
+                                   placeholder="Video name/label"
+                                   style="width: 100%; padding: 0.25rem; margin-bottom: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem;"
+                                   onchange="updateVideoLabel(${i}, this.value)">
                         </div>
                         <div>
                             <button class="gallery-btn" onclick="changeVideo(${i})">Change Video</button>
@@ -954,6 +1002,45 @@
                 
                 container.appendChild(spot);
             }
+        }
+
+        // Label management functions
+        async function updateImageLabel(category, spotNumber, label) {
+            const categoryLabels = JSON.parse(localStorage.getItem(`gallery_${category}_labels`) || '{}');
+            categoryLabels[`spot${spotNumber}`] = label.trim();
+            localStorage.setItem(`gallery_${category}_labels`, JSON.stringify(categoryLabels));
+            
+            // Save to Firebase if available
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                try {
+                    console.log(`🏷️ Saving ${category} image ${spotNumber} label to Firebase...`);
+                    await window.firebaseManager.saveData(`gallery_${category}_labels`, categoryLabels);
+                    console.log(`✅ ${category} image ${spotNumber} label saved to Firebase`);
+                } catch (error) {
+                    console.error(`Firebase ${category} label save failed:`, error);
+                }
+            }
+            
+            console.log(`Image label updated: ${category} ${spotNumber} = "${label}"`);
+        }
+        
+        async function updateVideoLabel(spotNumber, label) {
+            const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+            videoLabels[`spot${spotNumber}`] = label.trim();
+            localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+            
+            // Save to Firebase if available
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                try {
+                    console.log(`🏷️ Saving video ${spotNumber} label to Firebase...`);
+                    await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
+                    console.log(`✅ Video ${spotNumber} label saved to Firebase`);
+                } catch (error) {
+                    console.error('Firebase video label save failed:', error);
+                }
+            }
+            
+            console.log(`Video label updated: Video ${spotNumber} = "${label}"`);
         }
 
         // Category image management functions
@@ -985,11 +1072,20 @@
                     categoryData[`spot${spotNumber}`] = e.target.result;
                     localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
                     
+                    // Set default label if none exists
+                    const categoryLabels = JSON.parse(localStorage.getItem(`gallery_${category}_labels`) || '{}');
+                    if (!categoryLabels[`spot${spotNumber}`]) {
+                        categoryLabels[`spot${spotNumber}`] = `${category.charAt(0).toUpperCase() + category.slice(1)} ${spotNumber}`;
+                        localStorage.setItem(`gallery_${category}_labels`, JSON.stringify(categoryLabels));
+                    }
+                    
                     // Save to Firebase if available
                     if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
                         try {
                             console.log(`🖼️ Uploading ${category} image ${spotNumber} to Firebase...`);
                             await window.firebaseManager.saveData(`gallery_${category}`, categoryData);
+                            // Also save labels to Firebase
+                            await window.firebaseManager.saveData(`gallery_${category}_labels`, categoryLabels);
                             console.log(`✅ ${category} image ${spotNumber} uploaded to Firebase`);
                         } catch (error) {
                             console.error(`Firebase ${category} image upload failed:`, error);
@@ -1009,11 +1105,17 @@
                 delete categoryData[`spot${spotNumber}`];
                 localStorage.setItem(`gallery_${category}`, JSON.stringify(categoryData));
                 
+                // Also remove the label
+                const categoryLabels = JSON.parse(localStorage.getItem(`gallery_${category}_labels`) || '{}');
+                delete categoryLabels[`spot${spotNumber}`];
+                localStorage.setItem(`gallery_${category}_labels`, JSON.stringify(categoryLabels));
+                
                 // Save to Firebase if available
                 if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
                     try {
                         console.log(`🗑️ Removing ${category} image ${spotNumber} from Firebase...`);
                         await window.firebaseManager.saveData(`gallery_${category}`, categoryData);
+                        await window.firebaseManager.saveData(`gallery_${category}_labels`, categoryLabels);
                         console.log(`✅ ${category} image ${spotNumber} removed from Firebase`);
                     } catch (error) {
                         console.error(`Firebase ${category} image removal failed:`, error);
@@ -1059,11 +1161,19 @@
                     videoData[`spot${spotNumber}`] = e.target.result;
                     localStorage.setItem('gallery_videos', JSON.stringify(videoData));
                     
+                    // Set default label if none exists
+                    const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+                    if (!videoLabels[`spot${spotNumber}`]) {
+                        videoLabels[`spot${spotNumber}`] = `Project Video ${spotNumber}`;
+                        localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+                    }
+                    
                     // Save to Firebase if available
                     if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
                         try {
                             console.log(`📹 Uploading video ${spotNumber} to Firebase...`);
                             await window.firebaseManager.saveData('gallery_videos', videoData);
+                            await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
                             console.log(`✅ Video ${spotNumber} uploaded to Firebase`);
                         } catch (error) {
                             console.error('Firebase video upload failed:', error);
@@ -1083,11 +1193,17 @@
                 delete videoData[`spot${spotNumber}`];
                 localStorage.setItem('gallery_videos', JSON.stringify(videoData));
                 
+                // Also remove the label
+                const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+                delete videoLabels[`spot${spotNumber}`];
+                localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+                
                 // Save to Firebase if available
                 if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
                     try {
                         console.log(`🗑️ Removing video ${spotNumber} from Firebase...`);
                         await window.firebaseManager.saveData('gallery_videos', videoData);
+                        await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
                         console.log(`✅ Video ${spotNumber} removed from Firebase`);
                     } catch (error) {
                         console.error('Firebase video removal failed:', error);
@@ -1096,6 +1212,104 @@
                 
                 loadVideoGallery();
                 showSuccess('gallerySuccess');
+            }
+        }
+
+        // Featured Video Management Functions
+        async function uploadFeaturedVideo(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                    alert('Video file is too large. Please choose a file under 50MB.');
+                    return;
+                }
+                
+                // Show loading state
+                const preview = document.getElementById('featured-video-preview');
+                preview.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-right: 10px;"></i>
+                        <span>Uploading featured video...</span>
+                    </div>
+                `;
+                
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const videoUrl = e.target.result;
+                    
+                    // Save to both localStorage and Firebase
+                    localStorage.setItem('casa_featured_video', videoUrl);
+                    localStorage.setItem('casa_featured_video_updated', Date.now().toString());
+                    
+                    // Save to Firebase if available
+                    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                        try {
+                            console.log('🎬 Uploading featured video to Firebase...');
+                            await window.firebaseManager.saveData('casa_featured_video', videoUrl);
+                            console.log('✅ Featured video uploaded to Firebase');
+                        } catch (error) {
+                            console.error('Firebase featured video upload failed:', error);
+                        }
+                    }
+                    
+                    // Update preview
+                    preview.innerHTML = `
+                        <video class="featured-video-preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" muted>
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: white;">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    `;
+                    
+                    showSuccess('featuredVideoSuccess');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        async function removeFeaturedVideo() {
+            if (confirm('Are you sure you want to remove the featured video?')) {
+                localStorage.removeItem('casa_featured_video');
+                localStorage.setItem('casa_featured_video_updated', Date.now().toString());
+                
+                // Remove from Firebase if available
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                    try {
+                        console.log('🗑️ Removing featured video from Firebase...');
+                        await window.firebaseManager.removeData('casa_featured_video');
+                        console.log('✅ Featured video removed from Firebase');
+                    } catch (error) {
+                        console.error('Firebase featured video removal failed:', error);
+                    }
+                }
+                
+                // Reset preview
+                const preview = document.getElementById('featured-video-preview');
+                preview.innerHTML = `
+                    <div class="placeholder-content">
+                        <i class="fas fa-video" style="font-size: 3rem; color: #ccc;"></i>
+                        <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Upload Featured Video</p>
+                    </div>
+                `;
+                
+                showSuccess('featuredVideoSuccess');
+            }
+        }
+        
+        function loadFeaturedVideo() {
+            const savedVideo = localStorage.getItem('casa_featured_video');
+            const preview = document.getElementById('featured-video-preview');
+            
+            if (savedVideo && preview) {
+                preview.innerHTML = `
+                    <video class="featured-video-preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" muted>
+                        <source src="${savedVideo}" type="video/mp4">
+                    </video>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-play"></i>
+                    </div>
+                `;
             }
         }
 
@@ -1108,6 +1322,15 @@
         // Initialize
         if (checkAuth()) {
             loadSettings();
+            loadFeaturedVideo();
+            
+            // Initialize featured video upload
+            const featuredVideoUpload = document.getElementById('featured-video-upload');
+            if (featuredVideoUpload) {
+                featuredVideoUpload.addEventListener('change', function() {
+                    uploadFeaturedVideo(this);
+                });
+            }
             
             // Update Firebase status
             setTimeout(updateFirebaseStatus, 2000);

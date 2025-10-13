@@ -205,6 +205,8 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
+    position: relative;
+    z-index: 10;
 }
 
 .hero-content h1 {
@@ -224,12 +226,16 @@ body {
 .hero-buttons {
     display: flex;
     gap: 20px;
+    position: relative;
+    z-index: 20;
 }
 
 .hero-video {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    z-index: 5;
 }
 
 .video-placeholder {
