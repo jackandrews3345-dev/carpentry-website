@@ -478,7 +478,14 @@ function initializeVideoClickHandlers() {
         
         // Add click event
         newItem.addEventListener('click', function(e) {
-            // DEBUG: Check if this is hero section
+            // SAFETY CHECK 1: Verify this is actually within a video-item
+            const videoItemParent = e.target.closest('.video-item');
+            if (!videoItemParent) {
+                console.log('🚫 BLOCKED: Click not within a .video-item element');
+                return;
+            }
+            
+            // SAFETY CHECK 2: Check if this is hero section
             const isHeroSection = e.target.closest('.hero') || e.target.classList.contains('hero');
             const isHeroButton = e.target.closest('.hero-buttons') || e.target.classList.contains('btn');
             
