@@ -1281,43 +1281,55 @@ function updateGalleryFromAdmin() {
     const renovationGallery = JSON.parse(localStorage.getItem('gallery_renovation') || '{}');
     const customGallery = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
     
+    // Load custom labels from admin panel
+    const furnitureLabels = JSON.parse(localStorage.getItem('gallery_furniture_labels') || '{}');
+    const renovationLabels = JSON.parse(localStorage.getItem('gallery_renovation_labels') || '{}');
+    const customLabels = JSON.parse(localStorage.getItem('gallery_custom_labels') || '{}');
+    
     console.log('Admin gallery data:');
     console.log('  Furniture:', furnitureGallery);
     console.log('  Renovation:', renovationGallery);
     console.log('  Custom:', customGallery);
+    console.log('Admin labels:');
+    console.log('  Furniture labels:', furnitureLabels);
+    console.log('  Renovation labels:', renovationLabels);
+    console.log('  Custom labels:', customLabels);
     
     // Combine all images into a single pool
     const allImages = [];
     
-    // Add furniture images
+    // Add furniture images with custom labels
     Object.keys(furnitureGallery).forEach(key => {
         if (furnitureGallery[key]) {
+            const customLabel = furnitureLabels[key] || 'Custom Furniture Project';
             allImages.push({
                 src: furnitureGallery[key],
                 category: 'furniture',
-                title: `Custom Furniture Project`
+                title: customLabel
             });
         }
     });
     
-    // Add renovation images
+    // Add renovation images with custom labels
     Object.keys(renovationGallery).forEach(key => {
         if (renovationGallery[key]) {
+            const customLabel = renovationLabels[key] || 'Home Renovation Project';
             allImages.push({
                 src: renovationGallery[key],
                 category: 'renovation', 
-                title: `Home Renovation Project`
+                title: customLabel
             });
         }
     });
     
-    // Add custom work images
+    // Add custom work images with custom labels
     Object.keys(customGallery).forEach(key => {
         if (customGallery[key]) {
+            const customLabel = customLabels[key] || 'Custom Work Project';
             allImages.push({
                 src: customGallery[key],
                 category: 'custom',
-                title: `Custom Work Project`
+                title: customLabel
             });
         }
     });

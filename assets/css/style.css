@@ -199,12 +199,9 @@ body {
 }
 
 .hero-content {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
+    text-align: center;
     position: relative;
     z-index: 10;
 }
@@ -230,43 +227,7 @@ body {
     z-index: 20;
 }
 
-.hero-video {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    z-index: 5;
-}
-
-.video-placeholder {
-    width: 400px;
-    height: 250px;
-    background: var(--white);
-    border-radius: var(--border-radius-large);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-shadow: var(--shadow-medium);
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.video-placeholder:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-heavy);
-}
-
-.video-placeholder i {
-    font-size: 3rem;
-    color: var(--coral);
-    margin-bottom: 10px;
-}
-
-.video-placeholder p {
-    font-weight: 600;
-    color: var(--dark-gray);
-}
+/* Video styles removed - no longer needed */
 
 /* ===== ABOUT SECTION ===== */
 .about {
@@ -1013,10 +974,7 @@ body {
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
-    .hero-content {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
+    /* Hero content already centered, no changes needed */
     
     .hero-content h1 {
         font-size: 2.8rem;
@@ -1101,9 +1059,7 @@ body {
         grid-template-columns: 1fr;
     }
     
-    .video-placeholder {
-        width: 100% !important;
-    }
+    /* Video placeholder styles removed */
 }
 
 @media (max-width: 480px) {
