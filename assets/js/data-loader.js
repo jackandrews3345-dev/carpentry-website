@@ -728,129 +728,14 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
     // No need to reinitialize script.js handlers as they detect processed videos
 }
 
-// Update hero section video
+// Update hero section video - DISABLED (no hero video container exists)
 let heroVideoUpdating = false; // Prevent recursive updates
 
 function updateHeroVideo(skipFirebaseLoad = false) {
-    // Prevent multiple simultaneous updates that cause glitching
-    if (heroVideoUpdating && !skipFirebaseLoad) {
-        console.log('🎬 Hero video update already in progress, skipping...');
-        return;
-    }
-    
-    console.log('🎬 Updating hero section video...');
-    heroVideoUpdating = true;
-    
-    // Try to load featured video from Firebase if available (only on initial load)
-    if (!skipFirebaseLoad && window.firebaseManager && window.firebaseManager.isFirebaseReady) {
-        // Only load featured video from Firebase (completely independent from gallery videos)
-        window.firebaseManager.loadData('casa_featured_video').then(firebaseFeaturedVideo => {
-            // Update featured video if available
-            if (firebaseFeaturedVideo) {
-                const currentFeatured = localStorage.getItem('casa_featured_video');
-                if (currentFeatured !== firebaseFeaturedVideo) {
-                    localStorage.setItem('casa_featured_video', firebaseFeaturedVideo);
-                    localStorage.setItem('casa_featured_video_updated', Date.now().toString());
-                    console.log('🎬 Loading featured video from Firebase');
-                    // Trigger update with Firebase data but skip Firebase loading
-                    setTimeout(() => {
-                        heroVideoUpdating = false;
-                        updateHeroVideo(true);
-                    }, 50);
-                    return;
-                }
-            }
-            
-            heroVideoUpdating = false;
-        }).catch(error => {
-            console.log('⚠️ Could not load featured video from Firebase:', error);
-            heroVideoUpdating = false;
-        });
-        return; // Exit early, will resume in Firebase callback
-    }
-    
-    const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');
-    
-    if (!heroVideoContainer) {
-        console.log('Hero video container not found');
-        heroVideoUpdating = false;
-        return;
-    }
-    
-    // Check if we have a dedicated featured video (completely independent from gallery videos)
-    const featuredVideo = localStorage.getItem('casa_featured_video');
-    const heroVideo = featuredVideo; // No fallback - featured video is completely separate
-    
-    if (heroVideo) {
-        console.log('🎬 Loading featured video for hero section');
-        
-        // Create video container with fixed sizing to prevent background coverage
-        const videoContainer = document.createElement('div');
-        videoContainer.style.cssText = 'position: relative; width: 400px; height: 250px; margin: 0 auto; border-radius: 16px; overflow: hidden;';
-        
-        // Create video element
-        const videoElement = document.createElement('video');
-        videoElement.src = heroVideo;
-        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px; cursor: pointer;';
-        videoElement.muted = true;
-        videoElement.preload = 'metadata';
-        videoElement.autoplay = false;
-        videoElement.loop = false;
-        
-        const playOverlay = document.createElement('div');
-        playOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); cursor: pointer; z-index: 10;';
-        playOverlay.innerHTML = '<i class="fas fa-play-circle"></i>';
-        
-        const videoTitle = document.createElement('div');
-        videoTitle.style.cssText = 'position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); text-align: center;';
-        videoTitle.innerHTML = '<p style="margin: 0; font-size: 1.2rem;">Featured Work Video</p>';
-        
-        videoContainer.appendChild(videoElement);
-        videoContainer.appendChild(playOverlay);
-        videoContainer.appendChild(videoTitle);
-        
-        // Replace placeholder
-        heroVideoContainer.innerHTML = '';
-        heroVideoContainer.appendChild(videoContainer);
-        
-        // Add click handlers for fullscreen video playback using lightbox
-        const openFullscreenHeroVideo = () => {
-            console.log('🎬 Opening hero video in fullscreen lightbox');
-            // Use the existing lightbox system for fullscreen video
-            if (typeof openLightbox === 'function') {
-                openLightbox(heroVideo, 'Featured Work Video', 'video');
-            } else {
-                console.log('Lightbox not available, falling back to inline play');
-                // Fallback to inline video if lightbox not available
-                if (videoElement.paused) {
-                    videoElement.play();
-                    playOverlay.style.display = 'none';
-                    videoElement.controls = true;
-                } else {
-                    videoElement.pause();
-                    playOverlay.style.display = 'block';
-                    videoElement.controls = false;
-                }
-            }
-        };
-        
-        videoElement.onclick = openFullscreenHeroVideo;
-        playOverlay.onclick = openFullscreenHeroVideo;
-        
-        // Note: Hero video now opens in fullscreen lightbox instead of inline controls
-    } else {
-        console.log('No featured video uploaded - hero section will show placeholder');
-        // Keep original placeholder styling
-    }
-    
-    // Reset the updating flag - this prevents recursive calls and video flickering
+    // Hero video feature disabled - container doesn't exist in HTML
+    console.log('🎬 Hero video feature disabled - no container in HTML');
     heroVideoUpdating = false;
-    console.log('🎬 Hero video update complete');
-    
-    // Additional safety reset after a small delay to prevent Firebase load cycles
-    setTimeout(() => {
-        heroVideoUpdating = false;
-    }, 100);
+    return;
 }
 
 // Open video modal (you'll need to implement this)
