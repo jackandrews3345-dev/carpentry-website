@@ -1307,9 +1307,10 @@ function loadVideosFromAdmin() {
     }
 }
 
-// Load featured video for hero section
+// Load featured video for hero section - DISABLED
 function loadFeaturedVideoFromAdmin() {
-    console.log('Loading featured video from admin panel...');
+    console.log('Featured video function disabled - hero section should remain clean');
+    return; // Early return to prevent any video loading
     
     const featuredVideo = localStorage.getItem('casa_featured_video');
     const heroVideoContainer = document.querySelector('.hero-video .video-placeholder');

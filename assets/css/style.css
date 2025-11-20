@@ -194,8 +194,25 @@ body {
     min-height: 100vh;
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, var(--sand) 0%, var(--light-blue) 100%);
+    background: linear-gradient(135deg, rgba(244, 228, 188, 0.9) 0%, rgba(64, 181, 216, 0.9) 100%);
     padding: 120px 20px 80px;
+    position: relative;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
 }
 
 .hero-content {
@@ -209,17 +226,18 @@ body {
 .hero-content h1 {
     font-family: var(--font-heading);
     font-size: 3.5rem;
-    color: var(--dark-blue);
+    color: var(--white);
     margin-bottom: 20px;
     line-height: 1.2;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .hero-content p {
     font-size: 1.3rem;
-    color: var(--dark-gray);
+    color: var(--white);
     margin-bottom: 30px;
     font-weight: 500;
-    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 .hero-buttons {
