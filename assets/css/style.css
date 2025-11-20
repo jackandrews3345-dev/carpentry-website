@@ -216,8 +216,10 @@ body {
 
 .hero-content p {
     font-size: 1.3rem;
-    color: var(--gray);
+    color: var(--dark-gray);
     margin-bottom: 30px;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
 }
 
 .hero-buttons {
@@ -225,6 +227,7 @@ body {
     gap: 20px;
     position: relative;
     z-index: 20;
+    justify-content: center;
 }
 
 /* Video styles removed - no longer needed */
