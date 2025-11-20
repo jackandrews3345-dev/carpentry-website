@@ -478,6 +478,20 @@ function initializeVideoClickHandlers() {
         
         // Add click event
         newItem.addEventListener('click', function(e) {
+            // DEBUG: Check if this is hero section
+            const isHeroSection = e.target.closest('.hero') || e.target.classList.contains('hero');
+            const isHeroButton = e.target.closest('.hero-buttons') || e.target.classList.contains('btn');
+            
+            if (isHeroSection) {
+                console.log('🚫 BLOCKED: Click originated from hero section, not opening video');
+                return; // Don't open video for hero clicks
+            }
+            
+            if (isHeroButton) {
+                console.log('🚫 BLOCKED: Click on hero button, not opening video');
+                return; // Don't open video for button clicks
+            }
+            
             e.preventDefault();
             e.stopPropagation();
             
