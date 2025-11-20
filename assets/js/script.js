@@ -1307,9 +1307,90 @@ function loadVideosFromAdmin() {
     }
 }
 
-// Load featured video for hero section - DISABLED
+// Load hero photo slideshow from gallery images
+function loadHeroSlideshow() {
+    console.log('🎨 Loading hero slideshow...');
+    
+    // Collect all gallery images from localStorage
+    const slideshowImages = [];
+    
+    // Get images from all gallery categories
+    const furnitureData = JSON.parse(localStorage.getItem('gallery_furniture') || '{}');
+    const renovationData = JSON.parse(localStorage.getItem('gallery_renovation') || '{}');
+    const customData = JSON.parse(localStorage.getItem('gallery_custom') || '{}');
+    
+    // Add furniture images
+    Object.values(furnitureData).forEach(img => {
+        if (img && typeof img === 'string' && img.startsWith('data:image')) {
+            slideshowImages.push(img);
+        }
+    });
+    
+    // Add renovation images
+    Object.values(renovationData).forEach(img => {
+        if (img && typeof img === 'string' && img.startsWith('data:image')) {
+            slideshowImages.push(img);
+        }
+    });
+    
+    // Add custom images
+    Object.values(customData).forEach(img => {
+        if (img && typeof img === 'string' && img.startsWith('data:image')) {
+            slideshowImages.push(img);
+        }
+    });
+    
+    console.log(`📸 Found ${slideshowImages.length} images for slideshow`);
+    
+    // If we have images, create the slideshow
+    if (slideshowImages.length > 0) {
+        const heroSection = document.querySelector('.hero');
+        
+        // Create slideshow container if it doesn't exist
+        let slideshowContainer = heroSection.querySelector('.hero-slideshow');
+        if (!slideshowContainer) {
+            slideshowContainer = document.createElement('div');
+            slideshowContainer.className = 'hero-slideshow';
+            heroSection.insertBefore(slideshowContainer, heroSection.firstChild);
+        }
+        
+        // Clear existing slides
+        slideshowContainer.innerHTML = '';
+        
+        // Create slide elements
+        slideshowImages.forEach((imgSrc, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'hero-slide';
+            if (index === 0) slide.classList.add('active');
+            slide.style.backgroundImage = `url(${imgSrc})`;
+            slideshowContainer.appendChild(slide);
+        });
+        
+        // Start slideshow rotation
+        let currentSlide = 0;
+        setInterval(() => {
+            const slides = slideshowContainer.querySelectorAll('.hero-slide');
+            if (slides.length <= 1) return;
+            
+            // Remove active from current
+            slides[currentSlide].classList.remove('active');
+            
+            // Move to next slide
+            currentSlide = (currentSlide + 1) % slides.length;
+            
+            // Add active to new slide
+            slides[currentSlide].classList.add('active');
+        }, 5000); // Change image every 5 seconds
+        
+        console.log('✅ Hero slideshow initialized with', slideshowImages.length, 'images');
+    } else {
+        console.log('ℹ️ No images available for slideshow yet - upload images via admin panel');
+    }
+}
+
+// Old featured video function - DISABLED
 function loadFeaturedVideoFromAdmin() {
-    console.log('Featured video function disabled - hero section should remain clean');
+    console.log('Featured video function disabled - using photo slideshow instead');
     return; // Early return to prevent any video loading
     
     const featuredVideo = localStorage.getItem('casa_featured_video');
@@ -1664,8 +1745,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load videos after a short delay to ensure lightbox is ready
     setTimeout(() => {
         loadVideosFromAdmin();
-        loadFeaturedVideoFromAdmin(); // Load featured video for hero section
-        console.log('Videos loaded with lightbox ready');
+        loadHeroSlideshow(); // Load hero photo slideshow instead of video
+        console.log('Gallery videos loaded with lightbox ready');
     }, 1000);
     
     loadInteractiveMap();
