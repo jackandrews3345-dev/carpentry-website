@@ -821,15 +821,8 @@ function removeNotification(notification) {
 }
 
 // ===== PLACEHOLDER INTERACTION HANDLERS =====
-// Hero video placeholder
+// Map placeholder - removed hero video placeholder as it doesn't exist
 document.addEventListener('DOMContentLoaded', function() {
-    const heroVideoPlaceholder = document.querySelector('.hero .video-placeholder');
-    if (heroVideoPlaceholder) {
-        heroVideoPlaceholder.addEventListener('click', function() {
-            showNotification('Feature video will be displayed here. Upload your carpentry showcase video to this section.', 'info');
-        });
-    }
-
     // Map placeholder
     const mapPlaceholder = document.querySelector('.map-placeholder');
     if (mapPlaceholder) {
@@ -838,9 +831,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Profile image placeholder
+    // Profile image placeholder - but don't interfere with uploaded photos
     const profileImagePlaceholder = document.querySelector('.about .image-placeholder');
-    if (profileImagePlaceholder) {
+    if (profileImagePlaceholder && !profileImagePlaceholder.querySelector('img')) {
         profileImagePlaceholder.addEventListener('click', function() {
             showNotification('Add your professional photo here to personalize your carpentry website.', 'info');
         });

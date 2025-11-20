@@ -1346,28 +1346,20 @@ function updateGalleryFromAdmin() {
             // Update data-category attribute
             gallerySpot.setAttribute('data-category', image.category);
             
-            // Replace placeholder with actual image
-            const placeholder = gallerySpot.querySelector('.image-placeholder');
-            if (placeholder) {
-                const img = document.createElement('img');
-                img.src = image.src;
-                img.alt = image.title;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px;';
-                img.className = 'gallery-image';
-                
-                // Replace placeholder content
-                placeholder.innerHTML = '';
-                placeholder.appendChild(img);
-                
-                // Update title if there's a p element
-                const titleElement = document.createElement('p');
-                titleElement.textContent = image.title;
-                titleElement.style.cssText = 'position: absolute; bottom: 10px; left: 10px; right: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); margin: 0; font-size: 0.9rem; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 3px;';
-                placeholder.appendChild(titleElement);
-                
-                // Make the placeholder relative for positioning
-                placeholder.style.position = 'relative';
-            }
+            // Replace placeholder with actual image and title overlay
+            gallerySpot.innerHTML = `
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <img src="${image.src}" alt="${image.title}" 
+                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;"
+                         class="gallery-image">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 0 0 8px 8px;">
+                        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 600;">${image.title}</h4>
+                    </div>
+                </div>
+                <div class="gallery-overlay">
+                    <i class="fas fa-expand"></i>
+                </div>
+            `;
         }
     }
     
