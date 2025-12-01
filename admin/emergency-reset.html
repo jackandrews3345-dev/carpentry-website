@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency Gallery Reset</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 30px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #dc3545; }
+        button { padding: 12px 24px; font-size: 16px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; }
+        .danger { background: #dc3545; color: white; }
+        .warning { background: #ffc107; color: #000; }
+        .success { background: #28a745; color: white; }
+        .info { background: #17a2b8; color: white; }
+        .result { padding: 15px; margin: 15px 0; border-radius: 5px; display: none; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; max-height: 200px; }
+        .slot { padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; background: #fff; }
+        .slot.bad { border-color: #dc3545; background: #fff5f5; }
+        .slot.good { border-color: #28a745; background: #f0fff0; }
+    </style>
+</head>
+<body>
+    <h1>🚨 Emergency Gallery Reset</h1>
+    
+    <div class="card">
+        <h3>What's happening?</h3>
+        <p>Slots 1 & 2 won't accept uploads (stuck loading forever). This is usually caused by corrupted data in localStorage.</p>
+    </div>
+
+    <div class="card">
+        <h3>📊 Current Status:</h3>
+        <div id="status">Checking...</div>
+    </div>
+
+    <div class="card">
+        <h3>🔧 Quick Fixes:</h3>
+        
+        <button class="warning" onclick="resetSlots([1, 2])">
+            🔄 Reset Slots 1 & 2 Only
+        </button>
+        
+        <button class="warning" onclick="resetAllVideoSlots()">
+            🎬 Reset All Video Slots (1-4)
+        </button>
+        
+        <button class="danger" onclick="resetEverything()">
+            ⚠️ RESET ALL GALLERY DATA
+        </button>
+        
+        <br><br>
+        
+        <button class="info" onclick="downloadBackup()">
+            💾 Download Backup First
+        </button>
+    </div>
+
+    <div id="result" class="result"></div>
+
+    <div class="card">
+        <h3>📋 Detailed Data:</h3>
+        <button class="info" onclick="showDetails()">Show Raw Data</button>
+        <pre id="details" style="display:none;"></pre>
+    </div>
+
+    <script>
+        function checkStatus() {
+            const videos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            const labels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+            const posters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
+            
+            let statusHTML = '';
+            let problems = 0;
+            
+            for (let i = 1; i <= 4; i++) {
+                const video = videos[`spot${i}`];
+                const label = labels[`spot${i}`];
+                const poster = posters[`spot${i}`];
+                
+                let status = '';
+                let isGood = true;
+                
+                if (!video) {
+                    status = '✅ Empty (OK)';
+                } else if (typeof video !== 'string') {
+                    status = '❌ CORRUPTED (Object instead of string)';
+                    isGood = false;
+                    problems++;
+                } else if (video === 'null' || video === 'undefined' || video === '[object Object]') {
+                    status = '❌ CORRUPTED (Invalid value)';
+                    isGood = false;
+                    problems++;
+                } else if (video.startsWith('data:video') || video.startsWith('https://')) {
+                    const size = (video.length / 1024).toFixed(0);
+                    status = `✅ Valid (${size} KB)`;
+                } else {
+                    status = '⚠️ Unknown format';
+                    isGood = false;
+                    problems++;
+                }
+                
+                statusHTML += `
+                    <div class="slot ${isGood ? 'good' : 'bad'}">
+                        <strong>Video Slot ${i}:</strong> ${status}<br>
+                        ${label ? `Label: "${label}"` : ''}<br>
+                        ${poster ? 'Has thumbnail: Yes' : 'Has thumbnail: No'}
+                    </div>
+                `;
+            }
+            
+            if (problems > 0) {
+                statusHTML = `<div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>⚠️ Found ${problems} problem(s)</strong>
+                </div>` + statusHTML;
+            } else {
+                statusHTML = `<div style="background: #d4edda; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>✅ All slots are OK</strong>
+                </div>` + statusHTML;
+            }
+            
+            document.getElementById('status').innerHTML = statusHTML;
+        }
+        
+        function resetSlots(slots) {
+            if (!confirm(`Reset video slots ${slots.join(', ')}?\n\nThis will clear these slots so you can upload new videos.`)) {
+                return;
+            }
+            
+            const videos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            const labels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+            const posters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
+            
+            slots.forEach(slot => {
+                delete videos[`spot${slot}`];
+                delete labels[`spot${slot}`];
+                delete posters[`spot${slot}`];
+            });
+            
+            localStorage.setItem('gallery_videos', JSON.stringify(videos));
+            localStorage.setItem('gallery_videos_labels', JSON.stringify(labels));
+            localStorage.setItem('gallery_videos_posters', JSON.stringify(posters));
+            
+            showResult(`✅ Reset slots ${slots.join(', ')} successfully!<br><br>Go back to admin panel and try uploading again.`, 'success');
+            checkStatus();
+        }
+        
+        function resetAllVideoSlots() {
+            if (!confirm('Reset ALL video slots (1-4)?\n\nThis will clear all videos. You can re-upload them after.')) {
+                return;
+            }
+            
+            localStorage.removeItem('gallery_videos');
+            localStorage.removeItem('gallery_videos_labels');
+            localStorage.removeItem('gallery_videos_posters');
+            
+            showResult('✅ All video slots reset!<br><br>Go back to admin panel and upload fresh videos.', 'success');
+            checkStatus();
+        }
+        
+        function resetEverything() {
+            if (!confirm('⚠️ WARNING: This will delete ALL gallery data (videos, images, labels).\n\nAre you SURE?')) {
+                return;
+            }
+            
+            if (!confirm('Last chance! This cannot be undone. Continue?')) {
+                return;
+            }
+            
+            // Clear all gallery-related data
+            const keys = [
+                'gallery_videos',
+                'gallery_videos_labels', 
+                'gallery_videos_posters',
+                'gallery_furniture',
+                'gallery_renovation',
+                'gallery_custom',
+                'gallery_furniture_labels',
+                'gallery_renovation_labels',
+                'gallery_custom_labels'
+            ];
+            
+            keys.forEach(key => localStorage.removeItem(key));
+            
+            showResult('✅ Everything reset!<br><br>Your gallery is now completely clean. Start uploading fresh content.', 'success');
+            checkStatus();
+        }
+        
+        function downloadBackup() {
+            const backup = {
+                gallery_videos: localStorage.getItem('gallery_videos'),
+                gallery_videos_labels: localStorage.getItem('gallery_videos_labels'),
+                gallery_videos_posters: localStorage.getItem('gallery_videos_posters'),
+                gallery_furniture: localStorage.getItem('gallery_furniture'),
+                gallery_renovation: localStorage.getItem('gallery_renovation'),
+                gallery_custom: localStorage.getItem('gallery_custom'),
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gallery-backup-${Date.now()}.json`;
+            a.click();
+            
+            showResult('✅ Backup downloaded! Keep this file safe.', 'success');
+        }
+        
+        function showDetails() {
+            const details = document.getElementById('details');
+            if (details.style.display === 'none') {
+                const data = {
+                    videos: JSON.parse(localStorage.getItem('gallery_videos') || '{}'),
+                    labels: JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}'),
+                    posters_count: Object.keys(JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}')).length
+                };
+                details.textContent = JSON.stringify(data, null, 2);
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
+        }
+        
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.className = 'result ' + type;
+            result.innerHTML = message;
+            result.style.display = 'block';
+            
+            setTimeout(() => {
+                result.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Auto-check on load
+        window.onload = checkStatus;
+    </script>
+</body>
+</html>

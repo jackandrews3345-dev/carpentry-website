@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Corrupted Video Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        .danger { background: #dc3545; color: white; border: none; }
+        .primary { background: #007bff; color: white; border: none; }
+        .success { background: #28a745; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; display: none; }
+        .info { background: #17a2b8; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Corrupted Video Data</h1>
+    
+    <div class="info">
+        <strong>This tool will:</strong><br>
+        • Check your video data for corruption<br>
+        • Remove invalid video entries<br>
+        • Clean up localStorage<br>
+        <br>
+        <strong>Note:</strong> This will NOT delete your actual videos, just fix the data structure.
+    </div>
+
+    <h2>Current Video Data:</h2>
+    <pre id="currentData">Loading...</pre>
+
+    <button class="primary" onclick="checkData()">Check for Issues</button>
+    <button class="danger" onclick="cleanData()">Clean Corrupted Data</button>
+    <button class="primary" onclick="viewData()">View All Data</button>
+
+    <div id="result" class="success"></div>
+
+    <script>
+        function checkData() {
+            const videos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            const dataDiv = document.getElementById('currentData');
+            const resultDiv = document.getElementById('result');
+            
+            let issues = [];
+            let validCount = 0;
+            
+            for (const [key, value] of Object.entries(videos)) {
+                // Check if value is a valid string URL
+                if (typeof value === 'string' && value.length > 0) {
+                    if (value.startsWith('data:video') || value.startsWith('https://')) {
+                        validCount++;
+                    } else {
+                        issues.push(`${key}: Invalid URL format`);
+                    }
+                } else if (typeof value === 'object') {
+                    issues.push(`${key}: Object instead of string (corrupted)`);
+                } else {
+                    issues.push(`${key}: Invalid type (${typeof value})`);
+                }
+            }
+            
+            if (issues.length === 0) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#28a745';
+                resultDiv.innerHTML = `✅ All video data is valid!<br>Valid videos: ${validCount}`;
+            } else {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#ffc107';
+                resultDiv.style.color = '#000';
+                resultDiv.innerHTML = `
+                    <strong>⚠️ Found ${issues.length} issue(s):</strong><br>
+                    ${issues.map(i => `• ${i}`).join('<br>')}<br><br>
+                    <strong>Click "Clean Corrupted Data" to fix</strong>
+                `;
+            }
+            
+            dataDiv.textContent = JSON.stringify(videos, null, 2);
+        }
+        
+        function cleanData() {
+            if (!confirm('This will remove corrupted video entries. Continue?')) {
+                return;
+            }
+            
+            const videos = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            const cleaned = {};
+            let removedCount = 0;
+            let keptCount = 0;
+            
+            for (const [key, value] of Object.entries(videos)) {
+                // Only keep valid string URLs
+                if (typeof value === 'string' && value.length > 0) {
+                    if (value.startsWith('data:video') || value.startsWith('https://')) {
+                        cleaned[key] = value;
+                        keptCount++;
+                    } else {
+                        removedCount++;
+                    }
+                } else {
+                    removedCount++;
+                }
+            }
+            
+            // Save cleaned data
+            localStorage.setItem('gallery_videos', JSON.stringify(cleaned));
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#28a745';
+            resultDiv.innerHTML = `
+                ✅ Data cleaned!<br>
+                Kept: ${keptCount} valid videos<br>
+                Removed: ${removedCount} corrupted entries<br><br>
+                <strong>Refresh your admin panel to see changes</strong>
+            `;
+            
+            checkData();
+        }
+        
+        function viewData() {
+            const dataDiv = document.getElementById('currentData');
+            const videos = localStorage.getItem('gallery_videos');
+            const labels = localStorage.getItem('gallery_videos_labels');
+            const posters = localStorage.getItem('gallery_videos_posters');
+            
+            dataDiv.innerHTML = `
+<strong>gallery_videos:</strong>
+${videos || 'null'}
+
+<strong>gallery_videos_labels:</strong>
+${labels || 'null'}
+
+<strong>gallery_videos_posters:</strong>
+${posters ? (posters.length > 1000 ? posters.substring(0, 1000) + '... (truncated)' : posters) : 'null'}
+            `.trim();
+        }
+        
+        // Auto-check on load
+        window.onload = checkData;
+    </script>
+</body>
+</html>

@@ -45,7 +45,17 @@ class FirebaseManager {
             
             console.log('🔧 Setting up Firebase services...');
             this.database = firebase.database();
-            // Note: We only use Firebase Database (free), not Storage (paid)
+            
+            // Initialize Firebase Storage for large files (5GB free tier)
+            try {
+                this.storage = firebase.storage();
+                this.storageAvailable = true;
+                console.log('✅ Firebase Storage initialized (5GB free for large videos)');
+            } catch (error) {
+                console.warn('⚠️ Firebase Storage not available, will use base64 fallback:', error);
+                this.storageAvailable = false;
+            }
+            
             this.isFirebaseReady = true;
             this.fallbackToLocalStorage = false;
             
@@ -133,6 +143,67 @@ class FirebaseManager {
         } catch (error) {
             console.warn('Image conversion failed:', error);
             throw error;
+        }
+    }
+    
+    // Upload video to Firebase Storage (for large files, not base64)
+    async uploadVideo(file, path) {
+        try {
+            if (!this.storageAvailable) {
+                console.log('⚠️ Firebase Storage not available, using base64 fallback');
+                return await this.uploadImage(file, path); // Fallback to base64
+            }
+            
+            console.log(`📹 Uploading video to Firebase Storage: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+            
+            // Create storage reference
+            const storageRef = this.storage.ref(`videos/${path}`);
+            
+            // Upload file
+            const uploadTask = storageRef.put(file);
+            
+            // Track upload progress
+            return new Promise((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        console.log(`📤 Upload progress: ${progress.toFixed(1)}%`);
+                    },
+                    (error) => {
+                        console.error('❌ Video upload failed:', error);
+                        reject(error);
+                    },
+                    async () => {
+                        // Upload completed, get download URL
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        console.log('✅ Video uploaded to Firebase Storage:', downloadURL);
+                        resolve(downloadURL);
+                    }
+                );
+            });
+            
+        } catch (error) {
+            console.warn('Firebase Storage upload failed, using base64 fallback:', error);
+            return await this.uploadImage(file, path);
+        }
+    }
+    
+    // Remove data from Firebase
+    async removeData(key) {
+        try {
+            // Remove from localStorage
+            localStorage.removeItem(key);
+            
+            // If Firebase is ready, also remove from Firebase
+            if (this.isFirebaseReady && !this.fallbackToLocalStorage) {
+                await this.database.ref(key).remove();
+                console.log(`✅ Data removed from Firebase: ${key}`);
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('Firebase remove failed, data removed from localStorage only:', error);
+            return true;
         }
     }
 

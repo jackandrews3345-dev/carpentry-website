@@ -561,6 +561,16 @@
                 <div id="videos-content" class="gallery-category-content">
                     <h4>Project Videos</h4>
                     <p style="color: #666; font-size: 0.9rem;">Upload process videos, time-lapses, or project showcases (MP4 format recommended)</p>
+                    <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 5px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem;">
+                        <strong>☁️ Firebase Storage Active - Large Videos OK!</strong>
+                        <ul style="margin: 0.5rem 0 0 1.2rem; line-height: 1.6;">
+                            <li><strong>5GB free cloud storage</strong> for your videos</li>
+                            <li>Videos up to <strong>50MB</strong> supported</li>
+                            <li>Auto-uploads to cloud (no browser storage limits!)</li>
+                            <li>Thumbnails auto-generated for mobile previews</li>
+                            <li>Videos load fast for all visitors</li>
+                        </ul>
+                    </div>
                     <div id="videosGallery" class="gallery-grid video-grid"></div>
                 </div>
             </div>
@@ -970,8 +980,13 @@
                 if (videoData[`spot${i}`]) {
                     const currentLabel = videoLabels[`spot${i}`] || `Project Video ${i}`;
                     spot.classList.add('has-image');
+                    
+                    // Get poster thumbnail if available
+                    const videoPosters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
+                    const posterAttr = videoPosters[`spot${i}`] ? `poster="${videoPosters[`spot${i}`]}"` : '';
+                    
                     spot.innerHTML = `
-                        <video class="video-preview" muted>
+                        <video class="video-preview" muted ${posterAttr}>
                             <source src="${videoData[`spot${i}`]}" type="video/mp4">
                         </video>
                         <div class="video-play-overlay">
@@ -1138,52 +1153,123 @@
 
         async function uploadVideo(spotNumber, input) {
             const file = input.files[0];
-            if (file) {
-                if (file.size > 50 * 1024 * 1024) { // 50MB limit
-                    alert('Video file is too large. Please choose a file under 50MB.');
-                    return;
+            if (!file) return;
+            
+            console.log(`📹 Starting video upload for spot ${spotNumber}`);
+            console.log(`File: ${file.name}, Size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+            
+            // Warn about size limits
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                alert(`Video file is too large (${fileSizeMB}MB). Please choose a file under 50MB.\n\nTip: Compress your video first using HandBrake or an online tool.`);
+                return;
+            }
+            
+            // Show loading state
+            const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
+            if (videoSpot) {
+                videoSpot.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 120px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-bottom: 10px;"></i>
+                        <span id="upload-status-${spotNumber}">Uploading video...</span>
+                    </div>
+                `;
+            }
+            
+            try {
+                let videoUrl;
+                const statusEl = document.getElementById(`upload-status-${spotNumber}`);
+                
+                // Try Firebase Storage first for large videos
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady && window.firebaseManager.storageAvailable) {
+                    try {
+                        console.log(`☁️ Uploading to Firebase Storage...`);
+                        if (statusEl) statusEl.textContent = 'Uploading to cloud storage...';
+                        
+                        videoUrl = await window.firebaseManager.uploadVideo(file, `video-${spotNumber}-${Date.now()}.mp4`);
+                        console.log(`✅ Video uploaded to cloud:`, videoUrl);
+                    } catch (error) {
+                        console.error('❌ Firebase Storage upload failed:', error);
+                        console.log('Trying localStorage fallback...');
+                        if (statusEl) statusEl.textContent = 'Cloud upload failed, using local storage...';
+                        videoUrl = null;
+                    }
                 }
                 
-                // Show loading state
-                const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
-                if (videoSpot) {
-                    videoSpot.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; height: 120px;">
-                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-right: 10px;"></i>
-                            <span>Uploading video...</span>
-                        </div>
-                    `;
+                // Fallback to base64 if Firebase Storage not available
+                if (!videoUrl) {
+                    console.log(`💾 Converting video to base64...`);
+                    if (statusEl) statusEl.textContent = 'Converting video...';
+                    
+                    videoUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            console.log('✅ Video converted to base64');
+                            resolve(e.target.result);
+                        };
+                        reader.onerror = (e) => {
+                            console.error('❌ Video conversion failed:', e);
+                            reject(e);
+                        };
+                        reader.readAsDataURL(file);
+                    });
                 }
                 
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
-                    videoData[`spot${spotNumber}`] = e.target.result;
+                // Save video URL (either Firebase Storage URL or base64)
+                const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+                videoData[`spot${spotNumber}`] = videoUrl;
+                
+                try {
                     localStorage.setItem('gallery_videos', JSON.stringify(videoData));
-                    
-                    // Set default label if none exists
-                    const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
-                    if (!videoLabels[`spot${spotNumber}`]) {
-                        videoLabels[`spot${spotNumber}`] = `Project Video ${spotNumber}`;
-                        localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
-                    }
-                    
-                    // Save to Firebase if available
-                    if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
-                        try {
-                            console.log(`📹 Uploading video ${spotNumber} to Firebase...`);
-                            await window.firebaseManager.saveData('gallery_videos', videoData);
-                            await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
-                            console.log(`✅ Video ${spotNumber} uploaded to Firebase`);
-                        } catch (error) {
-                            console.error('Firebase video upload failed:', error);
+                } catch (error) {
+                    if (error.name === 'QuotaExceededError') {
+                        alert('Storage quota exceeded! \n\nGood news: Firebase Storage is available and can handle your large videos!\n\nThe system will automatically use cloud storage instead.\n\nIf you see this message, please:\n1. Remove other videos first to free up local space\n2. Re-upload this video - it will use Firebase Storage automatically');
+                        // Restore loading state to allow retry
+                        const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
+                        if (videoSpot) {
+                            videoSpot.innerHTML = `
+                                <i class="fas fa-video" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                <p style="color: #666; margin-bottom: 1rem;">Project Video ${spotNumber}</p>
+                                <button class="gallery-btn" onclick="addVideo(${spotNumber})">Add Video</button>
+                                <input type="file" id="video-upload-${spotNumber}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${spotNumber}, this)">
+                            `;
                         }
+                        return;
                     }
-                    
-                    loadVideoGallery();
-                    showSuccess('gallerySuccess');
-                };
-                reader.readAsDataURL(file);
+                    throw error;
+                }
+                
+                // Generate thumbnail/poster from video
+                generateVideoThumbnail(file, spotNumber);
+                
+                // Set default label if none exists
+                const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+                if (!videoLabels[`spot${spotNumber}`]) {
+                    videoLabels[`spot${spotNumber}`] = `Project Video ${spotNumber}`;
+                    localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+                }
+                
+                // Save to Firebase Database if available
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
+                    try {
+                        console.log(`📹 Saving video ${spotNumber} metadata to Firebase...`);
+                        await window.firebaseManager.saveData('gallery_videos', videoData);
+                        await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
+                        console.log(`✅ Video ${spotNumber} metadata saved to Firebase`);
+                    } catch (error) {
+                        console.error('Firebase metadata save failed:', error);
+                    }
+                }
+                
+                loadVideoGallery();
+                showSuccess('gallerySuccess');
+                console.log(`✅ Video upload complete for spot ${spotNumber}`);
+            } catch (error) {
+                console.error(`❌ Video upload failed for spot ${spotNumber}:`, error);
+                alert(`Video upload failed: ${error.message}\n\nPlease try:\n1. Compressing your video\n2. Using a smaller file\n3. Checking your internet connection`);
+                
+                // Restore upload button
+                loadVideoGallery();
             }
         }
 
@@ -1313,6 +1399,60 @@
             }
         }
 
+        // Generate video thumbnail for mobile preview
+        function generateVideoThumbnail(file, spotNumber) {
+            console.log(`🎬 Generating thumbnail for video ${spotNumber}...`);
+            
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const fileURL = URL.createObjectURL(file);
+            video.src = fileURL;
+            
+            video.onloadedmetadata = function() {
+                // Seek to 1 second or 10% into video for thumbnail
+                video.currentTime = Math.min(1, video.duration * 0.1);
+            };
+            
+            video.onseeked = function() {
+                // Set canvas size to match video (or constrain to reasonable size)
+                const maxWidth = 640;
+                const scale = Math.min(1, maxWidth / video.videoWidth);
+                canvas.width = video.videoWidth * scale;
+                canvas.height = video.videoHeight * scale;
+                
+                // Draw video frame to canvas
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert canvas to base64 image (JPEG for smaller size)
+                const thumbnailData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Save thumbnail
+                const videoPosters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
+                videoPosters[`spot${spotNumber}`] = thumbnailData;
+                
+                try {
+                    localStorage.setItem('gallery_videos_posters', JSON.stringify(videoPosters));
+                    console.log(`✅ Thumbnail generated for video ${spotNumber}`);
+                } catch (error) {
+                    console.warn('Could not save thumbnail:', error);
+                }
+                
+                // Clean up
+                URL.revokeObjectURL(fileURL);
+            };
+            
+            video.onerror = function() {
+                console.warn('Could not generate thumbnail for video');
+                URL.revokeObjectURL(fileURL);
+            };
+        }
+        
         // Initialize gallery management
         function loadGallery() {
             initializeGalleryTabs();
@@ -1436,9 +1576,10 @@
         });
     </script>
     
-    <!-- Firebase SDK (Database only - free tier) -->
+    <!-- Firebase SDK (Database + Storage for large videos) -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
     
     <!-- Firebase Configuration -->
     <script src="../assets/js/firebase-config.js"></script>

@@ -1295,7 +1295,7 @@ function loadVideosFromAdmin() {
             if (videoItems[index]) {
                 const placeholder = videoItems[index].querySelector('.video-placeholder');
                 if (placeholder) {
-                    placeholder.innerHTML = `<video style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer;" poster="${video.poster || ''}">
+                    placeholder.innerHTML = `<video style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer; background: #000;" poster="${video.poster || ''}" muted playsinline preload="metadata">
                         <source src="${video.src}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>`;
@@ -1411,8 +1411,9 @@ function loadFeaturedVideoFromAdmin() {
         
         const videoElement = document.createElement('video');
         videoElement.src = featuredVideo;
-        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px;';
+        videoElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 16px; background: #000;';
         videoElement.muted = true;
+        videoElement.playsInline = true;
         videoElement.preload = 'metadata';
         videoElement.autoplay = false;
         videoElement.loop = false;

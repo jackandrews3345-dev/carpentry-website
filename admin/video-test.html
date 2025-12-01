@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Upload Test - Casa Madera</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #28a745; }
+        .error { background: #f8d7da; border: 1px solid #dc3545; }
+        .info { background: #d1ecf1; border: 1px solid #17a2b8; }
+        .warning { background: #fff3cd; border: 1px solid #ffc107; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #console { background: #000; color: #0f0; padding: 15px; font-family: monospace; height: 300px; overflow-y: scroll; }
+        #videoPreview { max-width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Video Upload Diagnostic Tool</h1>
+    <p>Use this page to test video uploads and see detailed diagnostics.</p>
+
+    <div id="firebaseStatus" class="status info">Checking Firebase...</div>
+    
+    <h2>Upload Test Video</h2>
+    <input type="file" id="videoInput" accept="video/*">
+    <button onclick="testUpload()">Test Upload</button>
+    <button onclick="clearConsole()">Clear Console</button>
+    
+    <h3>Console Output:</h3>
+    <div id="console"></div>
+    
+    <div id="result"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+
+    <script>
+        const consoleDiv = document.getElementById('console');
+        
+        // Override console.log to display in page
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToConsole('LOG', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToConsole('ERROR', args.join(' '), true);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            appendToConsole('WARN', args.join(' '), false, true);
+        };
+        
+        function appendToConsole(type, message, isError = false, isWarn = false) {
+            const color = isError ? '#f00' : isWarn ? '#ff0' : '#0f0';
+            consoleDiv.innerHTML += `<div style="color: ${color}">[${type}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+        
+        // Check Firebase status after it loads
+        setTimeout(() => {
+            const statusDiv = document.getElementById('firebaseStatus');
+            if (window.firebaseManager) {
+                if (window.firebaseManager.isFirebaseReady) {
+                    if (window.firebaseManager.storageAvailable) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Firebase Storage is READY and AVAILABLE (5GB free)';
+                    } else {
+                        statusDiv.className = 'status warning';
+                        statusDiv.innerHTML = '⚠️ Firebase Database ready, but Storage NOT available';
+                    }
+                } else {
+                    statusDiv.className = 'status warning';
+                    statusDiv.innerHTML = '⚠️ Firebase is NOT ready - will use localStorage fallback';
+                }
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Firebase Manager not found';
+            }
+        }, 3000);
+        
+        async function testUpload() {
+            const fileInput = document.getElementById('videoInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a video file first');
+                return;
+            }
+            
+            console.log('========== STARTING VIDEO UPLOAD TEST ==========');
+            console.log(`File: ${file.name}`);
+            console.log(`Size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+            console.log(`Type: ${file.type}`);
+            console.log('');
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="status info">Uploading...</div>';
+            
+            try {
+                let videoUrl;
+                
+                // Check Firebase Manager
+                console.log('Checking Firebase Manager...');
+                if (!window.firebaseManager) {
+                    console.error('Firebase Manager not found!');
+                    throw new Error('Firebase Manager not initialized');
+                }
+                
+                console.log(`Firebase Ready: ${window.firebaseManager.isFirebaseReady}`);
+                console.log(`Storage Available: ${window.firebaseManager.storageAvailable}`);
+                console.log('');
+                
+                if (window.firebaseManager.isFirebaseReady && window.firebaseManager.storageAvailable) {
+                    console.log('Attempting Firebase Storage upload...');
+                    try {
+                        videoUrl = await window.firebaseManager.uploadVideo(file, `test-${Date.now()}.mp4`);
+                        console.log('✅ Firebase Storage upload successful!');
+                        console.log(`URL: ${videoUrl}`);
+                    } catch (storageError) {
+                        console.error('Firebase Storage upload failed:', storageError);
+                        console.log('Falling back to base64...');
+                        videoUrl = null;
+                    }
+                }
+                
+                if (!videoUrl) {
+                    console.log('Using base64 conversion...');
+                    videoUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            console.log('✅ Base64 conversion successful');
+                            console.log(`Data URL length: ${e.target.result.length} characters`);
+                            resolve(e.target.result);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                }
+                
+                console.log('');
+                console.log('========== UPLOAD TEST COMPLETE ==========');
+                console.log(`Final URL type: ${videoUrl.startsWith('data:') ? 'Base64' : 'Firebase Storage'}`);
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        <strong>✅ Upload Successful!</strong><br>
+                        URL Type: ${videoUrl.startsWith('data:') ? 'Base64 (localStorage)' : 'Firebase Storage (Cloud)'}<br>
+                        <video id="videoPreview" controls style="max-width: 100%; margin-top: 10px;">
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('========== UPLOAD TEST FAILED ==========');
+                console.error('Error:', error);
+                console.error('Stack:', error.stack);
+                
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        <strong>❌ Upload Failed</strong><br>
+                        Error: ${error.message}<br>
+                        Check console output above for details.
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

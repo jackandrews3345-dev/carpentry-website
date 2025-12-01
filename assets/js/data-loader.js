@@ -642,10 +642,26 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
         if (!placeholder) continue;
         
         // Check for admin uploaded video
-        const adminVideo = adminVideos[`spot${i}`];
+        let adminVideo = adminVideos[`spot${i}`];
         
         if (adminVideo) {
             console.log(`📹 Loading admin video for spot ${i}`);
+            
+            // Handle case where adminVideo might be an object instead of string
+            if (typeof adminVideo === 'object' && adminVideo.src) {
+                adminVideo = adminVideo.src;
+            } else if (typeof adminVideo !== 'string') {
+                console.error(`❌ Invalid video data for spot ${i}:`, adminVideo);
+                continue; // Skip this video
+            }
+            
+            // Validate video URL
+            if (!adminVideo || adminVideo === 'null' || adminVideo === 'undefined') {
+                console.error(`❌ Empty or invalid video URL for spot ${i}`);
+                continue;
+            }
+            
+            console.log(`✅ Video URL for spot ${i}: ${adminVideo.substring(0, 50)}...`);
             
             // Load custom labels
             const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
@@ -654,10 +670,17 @@ function updateVideoGallery(videos, skipFirebaseLoad = false) {
             // Replace placeholder with video element
             const videoElement = document.createElement('video');
             videoElement.src = adminVideo;
-            videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer;';
+            videoElement.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer; background: #000;';
             videoElement.muted = true;
+            videoElement.playsInline = true;
             videoElement.preload = 'metadata';
             videoElement.setAttribute('data-label', customLabel);
+            
+            // Check if there's a poster image for this video
+            const videoPosters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
+            if (videoPosters[`spot${i}`]) {
+                videoElement.poster = videoPosters[`spot${i}`];
+            }
             
             // Create video container with play overlay
             const videoContainer = document.createElement('div');
