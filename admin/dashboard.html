@@ -1175,11 +1175,27 @@
                 let videoUrl;
                 const statusEl = document.getElementById(`upload-status-${spotNumber}`);
                 
-                // Skip Firebase Storage for now - use base64 directly
-                // Firebase Storage requires additional setup in Firebase Console
-                console.log('💾 Using base64 storage (no cloud upload needed)');
-                if (statusEl) statusEl.textContent = 'Processing video...';
-                videoUrl = null; // Force base64 conversion
+                // Try Firebase Storage first for cross-device sync
+                if (window.firebaseManager && window.firebaseManager.isFirebaseReady && window.firebaseManager.storageAvailable) {
+                    try {
+                        console.log(`☁️ Uploading to Firebase Storage for cross-device sync...`);
+                        if (statusEl) statusEl.textContent = 'Uploading to cloud...';
+                        
+                        videoUrl = await window.firebaseManager.uploadVideo(file, `video-${spotNumber}-${Date.now()}.mp4`);
+                        console.log(`✅ Video uploaded successfully:`, videoUrl);
+                    } catch (error) {
+                        console.error('❌ Firebase Storage upload failed:', error);
+                        alert(`Upload failed: ${error.message}\n\nYou need to enable Firebase Storage permissions.\n\nGo to Firebase Console > Storage > Rules and set to test mode.`);
+                        
+                        // Restore the upload button so they can try again
+                        loadVideoGallery();
+                        return;
+                    }
+                } else {
+                    alert('Firebase Storage is not available. Videos need cloud storage to be visible on all devices.');
+                    loadVideoGallery();
+                    return;
+                }
                 
                 // Fallback to base64 if Firebase Storage not available
                 if (!videoUrl) {
