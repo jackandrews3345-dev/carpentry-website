@@ -2,27 +2,57 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Homepage -->
   <url>
-    <loc>https://casamadera1.netlify.app/</loc>
-    <lastmod>2025-10-04</lastmod>
+    <loc>https://YOURDOMAIN.com/</loc>
+    <lastmod>2024-12-01</lastmod>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
 
-  <!-- Admin dashboard -->
+  <!-- About Section -->
   <url>
-    <loc>https://casamadera1.netlify.app/admin-dashboard.html</loc>
-    <lastmod>2025-10-04</lastmod>
+    <loc>https://YOURDOMAIN.com/#about</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
   </url>
 
-  <!-- Admin login -->
+  <!-- Services Section -->
   <url>
-    <loc>https://casamadera1.netlify.app/admin-login.html</loc>
-    <lastmod>2025-10-04</lastmod>
+    <loc>https://YOURDOMAIN.com/#services</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.9</priority>
+    <changefreq>monthly</changefreq>
   </url>
 
-  <!-- Sample page with images -->
+  <!-- Gallery Section -->
   <url>
-    <loc>https://casamadera1.netlify.app/sample-with-images.html</loc>
-    <lastmod>2025-10-04</lastmod>
+    <loc>https://YOURDOMAIN.com/#gallery</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <!-- Reviews Section -->
+  <url>
+    <loc>https://YOURDOMAIN.com/#reviews</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <!-- Location Section -->
+  <url>
+    <loc>https://YOURDOMAIN.com/#location</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.7</priority>
+    <changefreq>yearly</changefreq>
+  </url>
+
+  <!-- Contact Section -->
+  <url>
+    <loc>https://YOURDOMAIN.com/#contact</loc>
+    <lastmod>2024-12-01</lastmod>
+    <priority>0.9</priority>
+    <changefreq>monthly</changefreq>
   </url>
 </urlset>
