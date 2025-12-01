@@ -90,21 +90,22 @@ function loadGalleryVideos(videoData) {
     const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
     
     videoItems.forEach((item, index) => {
+        // Get or create title element
+        let titleElement = item.querySelector('.video-title');
+        const customLabel = videoLabels[`spot${index + 1}`] || titleElement?.textContent || `Project Video ${index + 1}`;
+        
         if (videoData[`spot${index + 1}`]) {
-            const customLabel = videoLabels[`spot${index + 1}`] || `Project Video ${index + 1}`;
-            const video = document.createElement('video');
-            video.src = videoData[`spot${index + 1}`];
-            video.style.cssText = 'width: 100%; height: 200px; object-fit: cover; border-radius: 8px;';
-            video.muted = true;
-            video.dataset.label = customLabel; // Store label for video click handler
-            
+            // Create video with overlay and title
             item.innerHTML = `
-                <video style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" muted data-label="${customLabel}">
-                    <source src="${videoData[`spot${index + 1}`]}" type="video/mp4">
-                </video>
-                <div class="gallery-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s;">
-                    <i class="fas fa-play" style="color: white; font-size: 2rem;"></i>
+                <div style="position: relative; width: 100%; height: 200px;">
+                    <video style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" muted data-label="${customLabel}">
+                        <source src="${videoData[`spot${index + 1}`]}" type="video/mp4">
+                    </video>
+                    <div class="gallery-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s;">
+                        <i class="fas fa-play" style="color: white; font-size: 2rem;"></i>
+                    </div>
                 </div>
+                <h4 class="video-title">${customLabel}</h4>
             `;
             
             // Add hover effect
@@ -117,6 +118,11 @@ function loadGalleryVideos(videoData) {
                 const overlay = this.querySelector('.gallery-overlay');
                 if (overlay) overlay.style.opacity = '0';
             });
+        } else {
+            // Update title even if no video uploaded yet
+            if (titleElement && videoLabels[`spot${index + 1}`]) {
+                titleElement.textContent = videoLabels[`spot${index + 1}`];
+            }
         }
     });
 }

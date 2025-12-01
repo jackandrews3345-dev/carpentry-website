@@ -543,6 +543,19 @@ body {
     font-weight: 500;
 }
 
+.video-item {
+    position: relative;
+}
+
+.video-title {
+    margin-top: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-blue);
+    text-align: center;
+    font-family: var(--font-primary);
+}
+
 /* ===== REVIEWS SECTION ===== */
 .reviews {
     padding: var(--section-padding);
