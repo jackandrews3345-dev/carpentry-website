@@ -1175,21 +1175,11 @@
                 let videoUrl;
                 const statusEl = document.getElementById(`upload-status-${spotNumber}`);
                 
-                // Try Firebase Storage first for large videos
-                if (window.firebaseManager && window.firebaseManager.isFirebaseReady && window.firebaseManager.storageAvailable) {
-                    try {
-                        console.log(`☁️ Uploading to Firebase Storage...`);
-                        if (statusEl) statusEl.textContent = 'Uploading to cloud storage...';
-                        
-                        videoUrl = await window.firebaseManager.uploadVideo(file, `video-${spotNumber}-${Date.now()}.mp4`);
-                        console.log(`✅ Video uploaded to cloud:`, videoUrl);
-                    } catch (error) {
-                        console.error('❌ Firebase Storage upload failed:', error);
-                        console.log('Trying localStorage fallback...');
-                        if (statusEl) statusEl.textContent = 'Cloud upload failed, using local storage...';
-                        videoUrl = null;
-                    }
-                }
+                // Skip Firebase Storage for now - use base64 directly
+                // Firebase Storage requires additional setup in Firebase Console
+                console.log('💾 Using base64 storage (no cloud upload needed)');
+                if (statusEl) statusEl.textContent = 'Processing video...';
+                videoUrl = null; // Force base64 conversion
                 
                 // Fallback to base64 if Firebase Storage not available
                 if (!videoUrl) {
