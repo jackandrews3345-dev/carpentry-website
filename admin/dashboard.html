@@ -1158,12 +1158,7 @@
             console.log(`📹 Starting video upload for spot ${spotNumber}`);
             console.log(`File: ${file.name}, Size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
             
-            // Warn about size limits
-            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            if (file.size > 50 * 1024 * 1024) { // 50MB limit
-                alert(`Video file is too large (${fileSizeMB}MB). Please choose a file under 50MB.\n\nTip: Compress your video first using HandBrake or an online tool.`);
-                return;
-            }
+            // No size limits - Firebase Storage handles large files automatically
             
             // Show loading state
             const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
