@@ -562,13 +562,13 @@
                     <h4>Project Videos</h4>
                     <p style="color: #666; font-size: 0.9rem;">Upload process videos, time-lapses, or project showcases (MP4 format recommended)</p>
                     <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 5px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem;">
-                        <strong>☁️ Firebase Storage Active - Large Videos OK!</strong>
+                        <strong>🎉 YouTube/Vimeo Integration - Unlimited Videos!</strong>
                         <ul style="margin: 0.5rem 0 0 1.2rem; line-height: 1.6;">
-                            <li><strong>5GB free cloud storage</strong> for your videos</li>
-                            <li>Videos up to <strong>50MB</strong> supported</li>
-                            <li>Auto-uploads to cloud (no browser storage limits!)</li>
-                            <li>Thumbnails auto-generated for mobile previews</li>
-                            <li>Videos load fast for all visitors</li>
+                            <li>Upload videos to <strong>YouTube</strong> (set to "Unlisted")</li>
+                            <li>Paste the video URL here</li>
+                            <li><strong>Unlimited storage</strong> - no file size limits!</li>
+                            <li>Works on <strong>all devices instantly</strong> (synced via Firebase)</li>
+                            <li>Videos load super fast (YouTube's servers)</li>
                         </ul>
                     </div>
                     <div id="videosGallery" class="gallery-grid video-grid"></div>
@@ -963,7 +963,7 @@
             }
         }
 
-        // Load video gallery
+        // Load video gallery - YouTube/Vimeo URL based
         function loadVideoGallery() {
             const container = document.getElementById('videosGallery');
             const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
@@ -979,18 +979,27 @@
                 
                 if (videoData[`spot${i}`]) {
                     const currentLabel = videoLabels[`spot${i}`] || `Project Video ${i}`;
+                    const videoUrl = videoData[`spot${i}`];
                     spot.classList.add('has-image');
                     
-                    // Get poster thumbnail if available
-                    const videoPosters = JSON.parse(localStorage.getItem('gallery_videos_posters') || '{}');
-                    const posterAttr = videoPosters[`spot${i}`] ? `poster="${videoPosters[`spot${i}`]}"` : '';
+                    // Get YouTube thumbnail
+                    let thumbnailUrl = 'https://img.youtube.com/vi/placeholder/mqdefault.jpg';
+                    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                        const videoId = extractYouTubeId(videoUrl);
+                        if (videoId) {
+                            thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                        }
+                    }
                     
                     spot.innerHTML = `
-                        <video class="video-preview" muted ${posterAttr}>
-                            <source src="${videoData[`spot${i}`]}" type="video/mp4">
-                        </video>
-                        <div class="video-play-overlay">
-                            <i class="fas fa-play"></i>
+                        <div style="position: relative; width: 100%; height: 120px; background: #000; border-radius: 4px; overflow: hidden;">
+                            <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="${currentLabel}">
+                            <div class="video-play-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                <i class="fas fa-play" style="font-size: 2rem; color: white;"></i>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666; word-break: break-all;">
+                            ${videoUrl.substring(0, 40)}...
                         </div>
                         <div style="margin-top: 0.5rem;">
                             <input type="text" 
@@ -1001,22 +1010,34 @@
                                    onchange="updateVideoLabel(${i}, this.value)">
                         </div>
                         <div>
-                            <button class="gallery-btn" onclick="changeVideo(${i})">Change Video</button>
+                            <button class="gallery-btn" onclick="changeVideoUrl(${i})">Change URL</button>
                             <button class="gallery-btn remove" onclick="removeVideo(${i})">Remove</button>
                         </div>
-                        <input type="file" id="video-upload-${i}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${i}, this)">
                     `;
                 } else {
                     spot.innerHTML = `
-                        <i class="fas fa-video" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
-                        <p style="color: #666; margin-bottom: 1rem;">Project Video ${i}</p>
-                        <button class="gallery-btn" onclick="addVideo(${i})">Add Video</button>
-                        <input type="file" id="video-upload-${i}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${i}, this)">
+                        <i class="fas fa-link" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">Paste YouTube/Vimeo URL</p>
+                        <button class="gallery-btn" onclick="addVideoUrl(${i})">Add Video URL</button>
                     `;
                 }
                 
                 container.appendChild(spot);
             }
+        }
+        
+        // Extract YouTube video ID from various URL formats
+        function extractYouTubeId(url) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/,
+                /(?:youtu\.be\/)([a-zA-Z0-9_-]+)/,
+                /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/
+            ];
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
         }
 
         // Label management functions
@@ -1142,136 +1163,58 @@
             }
         }
 
-        // Video management functions
-        function addVideo(spotNumber) {
-            document.getElementById(`video-upload-${spotNumber}`).click();
+        // Video URL management functions
+        async function addVideoUrl(spotNumber) {
+            const url = prompt('Paste YouTube or Vimeo URL:\n\n(e.g. https://www.youtube.com/watch?v=...');
+            if (url && url.trim()) {
+                await saveVideoUrl(spotNumber, url.trim());
+            }
         }
-
-        function changeVideo(spotNumber) {
-            document.getElementById(`video-upload-${spotNumber}`).click();
+        
+        async function changeVideoUrl(spotNumber) {
+            const url = prompt('Paste new YouTube or Vimeo URL:');
+            if (url && url.trim()) {
+                await saveVideoUrl(spotNumber, url.trim());
+            }
         }
-
-        async function uploadVideo(spotNumber, input) {
-            const file = input.files[0];
-            if (!file) return;
+        
+        async function saveVideoUrl(spotNumber, url) {
+            console.log(`🔗 Saving YouTube/Vimeo URL for spot ${spotNumber}`);
             
-            console.log(`📹 Starting video upload for spot ${spotNumber}`);
-            console.log(`File: ${file.name}, Size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-            
-            // No size limits - Firebase Storage handles large files automatically
-            
-            // Show loading state
-            const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
-            if (videoSpot) {
-                videoSpot.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 120px;">
-                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007acc; margin-bottom: 10px;"></i>
-                        <span id="upload-status-${spotNumber}">Uploading video...</span>
-                    </div>
-                `;
+            // Validate URL
+            if (!url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('vimeo.com')) {
+                alert('Please enter a valid YouTube or Vimeo URL');
+                return;
             }
             
-            try {
-                let videoUrl;
-                const statusEl = document.getElementById(`upload-status-${spotNumber}`);
-                
-                // Try Firebase Storage first for cross-device sync
-                if (window.firebaseManager && window.firebaseManager.isFirebaseReady && window.firebaseManager.storageAvailable) {
-                    try {
-                        console.log(`☁️ Uploading to Firebase Storage for cross-device sync...`);
-                        if (statusEl) statusEl.textContent = 'Uploading to cloud...';
-                        
-                        videoUrl = await window.firebaseManager.uploadVideo(file, `video-${spotNumber}-${Date.now()}.mp4`);
-                        console.log(`✅ Video uploaded successfully:`, videoUrl);
-                    } catch (error) {
-                        console.error('❌ Firebase Storage upload failed:', error);
-                        alert(`Upload failed: ${error.message}\n\nYou need to enable Firebase Storage permissions.\n\nGo to Firebase Console > Storage > Rules and set to test mode.`);
-                        
-                        // Restore the upload button so they can try again
-                        loadVideoGallery();
-                        return;
-                    }
-                } else {
-                    alert('Firebase Storage is not available. Videos need cloud storage to be visible on all devices.');
-                    loadVideoGallery();
-                    return;
-                }
-                
-                // Fallback to base64 if Firebase Storage not available
-                if (!videoUrl) {
-                    console.log(`💾 Converting video to base64...`);
-                    if (statusEl) statusEl.textContent = 'Converting video...';
-                    
-                    videoUrl = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            console.log('✅ Video converted to base64');
-                            resolve(e.target.result);
-                        };
-                        reader.onerror = (e) => {
-                            console.error('❌ Video conversion failed:', e);
-                            reject(e);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-                
-                // Save video URL (either Firebase Storage URL or base64)
-                const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
-                videoData[`spot${spotNumber}`] = videoUrl;
-                
+            // Save video URL
+            const videoData = JSON.parse(localStorage.getItem('gallery_videos') || '{}');
+            videoData[`spot${spotNumber}`] = url;
+            localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+            
+            // Set default label if none exists
+            const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
+            if (!videoLabels[`spot${spotNumber}`]) {
+                videoLabels[`spot${spotNumber}`] = `Project Video ${spotNumber}`;
+                localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
+            }
+            
+            // Save to Firebase Database for cross-device sync
+            if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
                 try {
-                    localStorage.setItem('gallery_videos', JSON.stringify(videoData));
+                    console.log(`🔗 Syncing video URL to Firebase for all devices...`);
+                    await window.firebaseManager.saveData('gallery_videos', videoData);
+                    await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
+                    console.log(`✅ Video ${spotNumber} synced - now visible on all devices!`);
                 } catch (error) {
-                    if (error.name === 'QuotaExceededError') {
-                        alert('Storage quota exceeded! \n\nGood news: Firebase Storage is available and can handle your large videos!\n\nThe system will automatically use cloud storage instead.\n\nIf you see this message, please:\n1. Remove other videos first to free up local space\n2. Re-upload this video - it will use Firebase Storage automatically');
-                        // Restore loading state to allow retry
-                        const videoSpot = document.getElementById(`video-spot-${spotNumber}`);
-                        if (videoSpot) {
-                            videoSpot.innerHTML = `
-                                <i class="fas fa-video" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
-                                <p style="color: #666; margin-bottom: 1rem;">Project Video ${spotNumber}</p>
-                                <button class="gallery-btn" onclick="addVideo(${spotNumber})">Add Video</button>
-                                <input type="file" id="video-upload-${spotNumber}" class="gallery-upload" accept="video/*" onchange="uploadVideo(${spotNumber}, this)">
-                            `;
-                        }
-                        return;
-                    }
-                    throw error;
+                    console.error('Firebase sync failed:', error);
+                    alert('Warning: Could not sync to Firebase. Video is saved locally but may not appear on other devices.');
                 }
-                
-                // Generate thumbnail/poster from video
-                generateVideoThumbnail(file, spotNumber);
-                
-                // Set default label if none exists
-                const videoLabels = JSON.parse(localStorage.getItem('gallery_videos_labels') || '{}');
-                if (!videoLabels[`spot${spotNumber}`]) {
-                    videoLabels[`spot${spotNumber}`] = `Project Video ${spotNumber}`;
-                    localStorage.setItem('gallery_videos_labels', JSON.stringify(videoLabels));
-                }
-                
-                // Save to Firebase Database if available
-                if (window.firebaseManager && window.firebaseManager.isFirebaseReady) {
-                    try {
-                        console.log(`📹 Saving video ${spotNumber} metadata to Firebase...`);
-                        await window.firebaseManager.saveData('gallery_videos', videoData);
-                        await window.firebaseManager.saveData('gallery_videos_labels', videoLabels);
-                        console.log(`✅ Video ${spotNumber} metadata saved to Firebase`);
-                    } catch (error) {
-                        console.error('Firebase metadata save failed:', error);
-                    }
-                }
-                
-                loadVideoGallery();
-                showSuccess('gallerySuccess');
-                console.log(`✅ Video upload complete for spot ${spotNumber}`);
-            } catch (error) {
-                console.error(`❌ Video upload failed for spot ${spotNumber}:`, error);
-                alert(`Video upload failed: ${error.message}\n\nPlease try:\n1. Compressing your video\n2. Using a smaller file\n3. Checking your internet connection`);
-                
-                // Restore upload button
-                loadVideoGallery();
             }
+            
+            loadVideoGallery();
+            showSuccess('gallerySuccess');
+            console.log(`✅ Video URL saved for spot ${spotNumber}`);
         }
 
         async function removeVideo(spotNumber) {
